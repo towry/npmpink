@@ -1,0 +1,4 @@
+# https://github.com/rust-lang/rustfmt/blob/master/Configurations.md
+binop_separator = "Front"
+blank_lines_lower_bound = 0
+blank_lines_upper_bound = 1

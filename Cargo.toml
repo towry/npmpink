@@ -1,0 +1,6 @@
+# https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html
+[workspace]
+resolver = "2"
+members = ["hello-world"]
+# default package to operate with cargo etc.
+default-members = ["hello-world"]
