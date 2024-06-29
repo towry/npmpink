@@ -1,14 +1,11 @@
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::{io, thread, time::Duration};
 use tui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Borders, Widget},
-    Frame, Terminal,
+    backend::{Backend, CrosstermBackend}, Terminal,
 };
 
 // manage the app state.
@@ -22,7 +19,9 @@ pub(crate) fn run() -> Result<(), io::Error> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    terminal.draw(draw)?;
+    // let builder = Builder::<CrosstermBackend<io::Write>>::new();
+
+    // terminal.draw(builder.draw)?;
 
     thread::sleep(Duration::from_millis(5000));
 
@@ -35,12 +34,6 @@ pub(crate) fn run() -> Result<(), io::Error> {
     terminal.show_cursor()?;
 
     Ok(())
-}
-
-fn draw<B: Backend>(f: &mut Frame<B>) {
-    let size = f.size();
-    let block = Block::default().title("Block").borders(Borders::ALL);
-    f.render_widget(block, size);
 }
 
 fn draw_header() {}

@@ -1,9 +1,15 @@
+mod cli;
+mod config;
+mod lockfile;
+mod package;
+mod source;
 mod tui;
 
+use cli::*;
 use std::io;
 
 fn main() -> Result<(), io::Error> {
-    tui::run()
+    run()
 }
 
 // healthy report
