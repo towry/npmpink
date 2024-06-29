@@ -53,7 +53,7 @@
         rustc = rust-toolchain;
       };
       buildInputs =
-        [pkgs.openssl]
+        [pkgs.openssl pkgs.bashInteractive]
         ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [pkgs.libiconv apple_sdk.DiskArbitration apple_sdk.Foundation apple_sdk.Security apple_sdk.SystemConfiguration];
     in {
       packages.default = naersk'.buildPackage {
