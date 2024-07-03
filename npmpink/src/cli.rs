@@ -1,4 +1,4 @@
-use crate::config;
+use crate::config::Config;
 use clap::{Parser, Subcommand};
 use std::{io::Error, result::Result};
 
@@ -49,7 +49,7 @@ pub(super) fn run() -> Result<(), Error> {
             return cmd_handler_source_sub_cli(&command.command);
         }
         Some(Commands::Check) => {
-            unimplemented!("check is not done yet");
+            return cmd_handler_check();
         }
         None => {}
     }
@@ -58,11 +58,27 @@ pub(super) fn run() -> Result<(), Error> {
 }
 
 fn cmd_handler_init() -> Result<(), Error> {
-    let config_path = config::Config::root_config_path();
+    if Config::healthcheck().is_ok() {
+        println!("init passed");
+        return Ok(());
+    }
 
-    println!("{:?}", config_path);
+    // init config
+    Config::init_from_default()
+}
 
-    Ok(())
+fn cmd_handler_check() -> Result<(), Error> {
+    let result = Config::healthcheck();
+
+    if result.is_ok() {
+        println!("all checks pass");
+        return Ok(());
+    }
+
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        result.unwrap_err().to_string(),
+    ))
 }
 
 fn cmd_handler_source_sub_cli(command: &Option<SourceCommands>) -> Result<(), Error> {

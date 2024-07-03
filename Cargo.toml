@@ -4,3 +4,6 @@ resolver = "2"
 members = ["npmpink"]
 # default package to operate with cargo etc.
 default-members = ["npmpink"]
+
+[profile.release]
+panic = 'abort'
