@@ -79,9 +79,10 @@ impl Config {
 
     pub(crate) fn init_from_default() -> Result<(), std::io::Error> {
         let root_config_path = Self::root_config_path();
-
         let mut file = fs::File::create(root_config_path)?;
-        file.write_all(b"testing")?;
+        let content = serde_json::to_string_pretty(&Config::default()).unwrap();
+
+        file.write_all(content.as_bytes())?;
 
         Ok(())
     }

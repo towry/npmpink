@@ -22,3 +22,5 @@ Cargo.lock
 .direnv/
 
 # End of https://www.toptal.com/developers/gitignore/api/rust
+
+local.justfile
