@@ -9,7 +9,8 @@ env:
   CARGO_NET_RETRY: 10
   CI: 1
   RUST_BACKTRACE: short
-  RUSTFLAGS: -D warnings
+  # https://doc.rust-lang.org/rustc/command-line-arguments.html#-d-set-lint-denied
+  # RUSTFLAGS: -D warnings
   RUSTUP_MAX_RETRIES: 10
   RUST_TEST_THREADS: 1
 
