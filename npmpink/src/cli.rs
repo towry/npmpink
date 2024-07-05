@@ -1,5 +1,5 @@
 use crate::config::Config;
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use std::{io::Error, result::Result};
 
 #[derive(Parser, Debug)]
@@ -12,13 +12,19 @@ pub(crate) struct Cli {
 #[derive(Subcommand, Debug)]
 pub(super) enum Commands {
     /// Setup if is first run, create root config file etc.
-    Init,
+    Init(InitArgs),
 
     /// Source manage.
     Source(SourceSubCli),
 
     /// Check packages in current workspace.
     Check,
+}
+
+#[derive(Debug, Args)]
+struct InitArgs {
+    #[arg(short, long, help = "Force init", action)]
+    force: bool,
 }
 
 #[derive(Debug, Parser)]
@@ -42,8 +48,8 @@ pub(super) fn run() -> Result<(), Error> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::Init) => {
-            return cmd_handler_init();
+        Some(Commands::Init(args)) => {
+            return cmd_handler_init(args);
         }
         Some(Commands::Source(command)) => {
             return cmd_handler_source_sub_cli(&command.command);
@@ -57,8 +63,8 @@ pub(super) fn run() -> Result<(), Error> {
     Ok(())
 }
 
-fn cmd_handler_init() -> Result<(), Error> {
-    if Config::healthcheck().is_ok() {
+fn cmd_handler_init(args: &InitArgs) -> Result<(), Error> {
+    if !args.force && Config::healthcheck().is_ok() {
         println!("init passed");
         return Ok(());
     }

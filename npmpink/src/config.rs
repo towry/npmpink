@@ -28,6 +28,7 @@ fn home_dir() -> Option<PathBuf> {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub(crate) enum Mode {
     Symlink,
     Copy,

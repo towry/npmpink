@@ -1,5 +1,6 @@
 mod cli;
 mod config;
+mod error;
 mod lockfile;
 mod package;
 mod source;
