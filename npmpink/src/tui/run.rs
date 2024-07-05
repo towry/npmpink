@@ -1,3 +1,4 @@
+use anyhow::Result;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
@@ -5,13 +6,14 @@ use crossterm::{
 };
 use std::{io, thread, time::Duration};
 use tui::{
-    backend::{Backend, CrosstermBackend}, Terminal,
+    backend::{Backend, CrosstermBackend},
+    Terminal,
 };
 
 // manage the app state.
 struct State;
 
-pub(crate) fn run() -> Result<(), io::Error> {
+pub(crate) fn run() -> Result<()> {
     // TODO: catch ctrl-c to clean up.
     enable_raw_mode()?;
     let mut stdout = io::stdout();

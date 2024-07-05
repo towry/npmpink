@@ -1,11 +1,12 @@
 // https://github.com/clap-rs/clap/blob/master/examples/git-derive.rs
+// https://docs.rs/clap/latest/clap/_derive/index.html#terminology
 use crate::source::Source;
 use crate::{
     config::{appConfig, Config},
     workspace::Workspace,
 };
+use anyhow::{bail, Result};
 use clap::{Args, Parser, Subcommand};
-use std::{io::Error, result::Result};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
@@ -27,7 +28,7 @@ pub(super) enum Commands {
 }
 
 #[derive(Debug, Args)]
-struct InitArgs {
+pub(crate) struct InitArgs {
     #[arg(short, long, help = "Force init", action)]
     force: bool,
 }
@@ -42,17 +43,14 @@ pub(super) struct SourceSubCli {
 #[derive(Debug, Subcommand)]
 pub(super) enum SourceCommands {
     /// Add source.
-    Add {
-        #[arg(short, long, help = "dir to add")]
-        dir: String,
-    },
+    Add { dir: String },
     /// Remove source.
     Remove,
     /// List source.
     List,
 }
 
-pub(super) fn run() -> Result<(), Error> {
+pub(super) fn run() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
@@ -71,7 +69,7 @@ pub(super) fn run() -> Result<(), Error> {
     Ok(())
 }
 
-fn cmd_handler_init(args: &InitArgs) -> Result<(), Error> {
+fn cmd_handler_init(args: &InitArgs) -> Result<()> {
     if !args.force && Config::healthcheck().is_ok() {
         println!("init passed");
         return Ok(());
@@ -81,7 +79,7 @@ fn cmd_handler_init(args: &InitArgs) -> Result<(), Error> {
     Config::create_from_default()
 }
 
-fn cmd_handler_check() -> Result<(), Error> {
+fn cmd_handler_check() -> Result<()> {
     let result = Config::healthcheck();
 
     if result.is_ok() {
@@ -89,13 +87,10 @@ fn cmd_handler_check() -> Result<(), Error> {
         return Ok(());
     }
 
-    Err(std::io::Error::new(
-        std::io::ErrorKind::Other,
-        result.unwrap_err().to_string(),
-    ))
+    bail!("check pass failed")
 }
 
-fn cmd_handler_source_sub_cli(command: &Option<SourceCommands>) -> Result<(), Error> {
+fn cmd_handler_source_sub_cli(command: &Option<SourceCommands>) -> Result<()> {
     match command {
         Some(SourceCommands::Add { dir }) => {
             cmd_handler_source_add(dir)?;
@@ -111,37 +106,25 @@ fn cmd_handler_source_sub_cli(command: &Option<SourceCommands>) -> Result<(), Er
     Ok(())
 }
 
-fn cmd_handler_source_add(dir: &String) -> Result<(), Error> {
+fn cmd_handler_source_add(dir: &String) -> Result<()> {
     let wk = Workspace::init_from_dir(dir);
 
     if !wk.is_ok_loosely() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "workspace doesn't contains package.json",
-        ));
+        bail!("workspace doesn't contains package.json");
     }
 
     let Ok(mut config) = appConfig.lock() else {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Failed to get app config",
-        ));
+        bail!("Failed to get app config");
     };
 
     let Some(absolute_dir) = wk.absolute_dir() else {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Not an valid directory",
-        ));
+        bail!("Not an valid directory");
     };
 
     let source = Source::new(absolute_dir);
 
     if config.has_source(&source.id) {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Source already exists",
-        ));
+        bail!("Source already exists");
     }
 
     config.sources.push(source);
@@ -150,7 +133,7 @@ fn cmd_handler_source_add(dir: &String) -> Result<(), Error> {
     Ok(())
 }
 
-fn cmd_handler_source_list() -> Result<(), Error> {
+fn cmd_handler_source_list() -> Result<()> {
     let config = appConfig.lock().unwrap();
 
     for source in config.sources.iter() {

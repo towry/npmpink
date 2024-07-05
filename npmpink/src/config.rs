@@ -1,12 +1,14 @@
 use crate::source::Source;
+use anyhow::Result;
 #[allow(unused_imports)]
 use home::home_dir as crate_home_dir;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::prelude::*;
+use std::path::PathBuf;
 use std::sync::Mutex;
-use std::{path::PathBuf, result::Result};
+use thiserror::Error;
 
 lazy_static! {
     static ref ROOT_CONFIG_PATH: PathBuf = get_root_config_path();
@@ -43,19 +45,12 @@ pub(crate) struct Config {
 
 // maybe move this to config_health.rs module.
 /// Health check for config
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Error)]
 pub(crate) enum HealthCheckError {
+    #[error("File does not exist")]
     ConfigFileNotExist,
+    #[error("Config file is invalid")]
     ConfigFileInvalid,
-}
-
-impl std::fmt::Display for HealthCheckError {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            HealthCheckError::ConfigFileNotExist => write!(fmt, "Config file not exist"),
-            HealthCheckError::ConfigFileInvalid => write!(fmt, "Config file is invalid"),
-        }
-    }
 }
 
 impl Config {
@@ -79,7 +74,7 @@ impl Config {
         Ok(())
     }
 
-    pub(crate) fn create_from_default() -> Result<(), std::io::Error> {
+    pub(crate) fn create_from_default() -> Result<()> {
         let root_config_path = Self::root_config_path();
         let mut file = fs::File::create(root_config_path)?;
         let content = serde_json::to_string_pretty(&Config::default()).unwrap();

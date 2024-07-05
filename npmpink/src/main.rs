@@ -1,6 +1,5 @@
 mod cli;
 mod config;
-mod error;
 mod lockfile;
 mod package;
 mod source;
@@ -8,9 +7,8 @@ mod tui;
 mod workspace;
 
 use cli::*;
-use std::io;
 
-fn main() -> Result<(), io::Error> {
+fn main() -> anyhow::Result<()> {
     run()
 }
 
