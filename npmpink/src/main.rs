@@ -5,6 +5,7 @@ mod lockfile;
 mod package;
 mod source;
 mod tui;
+mod workspace;
 
 use cli::*;
 use std::io;

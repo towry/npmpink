@@ -5,11 +5,12 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::prelude::*;
+use std::sync::Mutex;
 use std::{path::PathBuf, result::Result};
 
 lazy_static! {
     static ref ROOT_CONFIG_PATH: PathBuf = get_root_config_path();
-    pub(crate) static ref appConfig: Config = Config::default();
+    pub(crate) static ref appConfig: Mutex<Config> = Mutex::new(Config::load_or_default());
 }
 
 fn get_root_config_path() -> PathBuf {
@@ -36,8 +37,8 @@ pub(crate) enum Mode {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Config {
-    mode: Mode,
-    sources: Vec<Source>,
+    pub(crate) mode: Mode,
+    pub(crate) sources: Vec<Source>,
 }
 
 // maybe move this to config_health.rs module.
@@ -78,7 +79,7 @@ impl Config {
         Ok(())
     }
 
-    pub(crate) fn init_from_default() -> Result<(), std::io::Error> {
+    pub(crate) fn create_from_default() -> Result<(), std::io::Error> {
         let root_config_path = Self::root_config_path();
         let mut file = fs::File::create(root_config_path)?;
         let content = serde_json::to_string_pretty(&Config::default()).unwrap();
@@ -86,6 +87,29 @@ impl Config {
         file.write_all(content.as_bytes())?;
 
         Ok(())
+    }
+
+    pub(crate) fn load_or_default() -> Self {
+        let root_config_path = Self::root_config_path();
+
+        if root_config_path.try_exists().unwrap_or(false) {
+            let content = fs::read_to_string(root_config_path);
+            if let Ok(content) = content {
+                return serde_json::from_str(&content).unwrap_or(Config::default());
+            }
+        }
+
+        Config::default()
+    }
+
+    pub(crate) fn has_source(&self, id: &str) -> bool {
+        self.sources.iter().any(|s| s.id == id)
+    }
+
+    pub(crate) fn flush(&self) -> std::io::Result<()> {
+        let root_config_path = Self::root_config_path();
+        let content = serde_json::to_string_pretty(self).unwrap();
+        fs::write(root_config_path, content.as_bytes())
     }
 }
 

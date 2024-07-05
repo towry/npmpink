@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub(crate) struct Source {
-    path: PathBuf,
-    id: String,
+    /// Absolute path
+    pub(crate) path: PathBuf,
+    pub(crate) id: String,
 }
 
 impl Hash for Source {
@@ -21,12 +22,17 @@ fn hash_path_string(str: String) -> String {
 }
 
 impl Source {
-    fn new(path: impl Into<String>) -> Self {
-        let path = path.into();
+    pub(crate) fn new<P>(path: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
+        let pathbuf = path.as_ref().to_path_buf();
+        // cli module need to known and handle the absolute path
+        assert!(pathbuf.is_absolute());
 
         Source {
-            path: PathBuf::from(path.clone()),
-            id: hash_path_string(path.clone()),
+            path: pathbuf.clone(),
+            id: hash_path_string(path.as_ref().to_string_lossy().into()),
         }
     }
 }
@@ -35,7 +41,7 @@ impl Source {
 mod tests {
     use super::*;
 
-    const PATHSTR: &str = "foo/bar";
+    const PATHSTR: &str = env!("CARGO_MANIFEST_DIR");
 
     #[test]
     fn test_source_new() {

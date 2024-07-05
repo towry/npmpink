@@ -1,4 +1,9 @@
-use crate::config::Config;
+// https://github.com/clap-rs/clap/blob/master/examples/git-derive.rs
+use crate::source::Source;
+use crate::{
+    config::{appConfig, Config},
+    workspace::Workspace,
+};
 use clap::{Args, Parser, Subcommand};
 use std::{io::Error, result::Result};
 
@@ -37,7 +42,10 @@ pub(super) struct SourceSubCli {
 #[derive(Debug, Subcommand)]
 pub(super) enum SourceCommands {
     /// Add source.
-    Add,
+    Add {
+        #[arg(short, long, help = "dir to add")]
+        dir: String,
+    },
     /// Remove source.
     Remove,
     /// List source.
@@ -70,7 +78,7 @@ fn cmd_handler_init(args: &InitArgs) -> Result<(), Error> {
     }
 
     // init config
-    Config::init_from_default()
+    Config::create_from_default()
 }
 
 fn cmd_handler_check() -> Result<(), Error> {
@@ -89,16 +97,65 @@ fn cmd_handler_check() -> Result<(), Error> {
 
 fn cmd_handler_source_sub_cli(command: &Option<SourceCommands>) -> Result<(), Error> {
     match command {
-        Some(SourceCommands::Add) => {
-            println!("add source..");
+        Some(SourceCommands::Add { dir }) => {
+            cmd_handler_source_add(dir)?;
         }
         Some(SourceCommands::Remove) => {
             println!("remove source..");
         }
         Some(SourceCommands::List) => {
-            println!("list sources..");
+            cmd_handler_source_list()?;
         }
         None => {}
     }
+    Ok(())
+}
+
+fn cmd_handler_source_add(dir: &String) -> Result<(), Error> {
+    let wk = Workspace::init_from_dir(dir);
+
+    if !wk.is_ok_loosely() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "workspace doesn't contains package.json",
+        ));
+    }
+
+    let Ok(mut config) = appConfig.lock() else {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Failed to get app config",
+        ));
+    };
+
+    let Some(absolute_dir) = wk.absolute_dir() else {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Not an valid directory",
+        ));
+    };
+
+    let source = Source::new(absolute_dir);
+
+    if config.has_source(&source.id) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Source already exists",
+        ));
+    }
+
+    config.sources.push(source);
+    config.flush()?;
+
+    Ok(())
+}
+
+fn cmd_handler_source_list() -> Result<(), Error> {
+    let config = appConfig.lock().unwrap();
+
+    for source in config.sources.iter() {
+        println!("{}: {}", source.id, source.path.display());
+    }
+
     Ok(())
 }
