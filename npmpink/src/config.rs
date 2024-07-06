@@ -1,6 +1,5 @@
 use crate::source::Source;
 use anyhow::Result;
-#[allow(unused_imports)]
 use home::home_dir as crate_home_dir;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -47,7 +46,7 @@ pub(crate) struct Config {
 /// Health check for config
 #[derive(Debug, PartialEq, Error)]
 pub(crate) enum HealthCheckError {
-    #[error("File does not exist")]
+    #[error("Config file does not exist")]
     ConfigFileNotExist,
     #[error("Config file is invalid")]
     ConfigFileInvalid,
