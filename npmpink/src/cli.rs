@@ -6,7 +6,7 @@ use crate::{
     workspace::Workspace,
 };
 use anyhow::{bail, Result};
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
@@ -18,30 +18,29 @@ pub(crate) struct Cli {
 #[derive(Subcommand, Debug)]
 pub(super) enum Commands {
     /// Setup if is first run, create root config file etc.
-    Init(InitArgs),
+    Init {
+        #[arg(short, long, help = "Force init", action)]
+        force: bool,
+    },
 
     /// Source manage.
-    Source(SourceSubCli),
+    Source {
+        #[command(subcommand)]
+        command: SourceSubCli,
+    },
+
+    /// Package manage.
+    Package {
+        #[command(subcommand)]
+        command: PackageSubCli,
+    },
 
     /// Check packages in current workspace.
     Check,
 }
 
-#[derive(Debug, Args)]
-pub(crate) struct InitArgs {
-    #[arg(short, long, help = "Force init", action)]
-    force: bool,
-}
-
-#[derive(Debug, Parser)]
-#[command(arg_required_else_help = true)]
-pub(super) struct SourceSubCli {
-    #[command(subcommand)]
-    command: Option<SourceCommands>,
-}
-
 #[derive(Debug, Subcommand)]
-pub(super) enum SourceCommands {
+pub(super) enum SourceSubCli {
     /// Add source.
     Add { dir: String },
     /// Remove source.
@@ -50,15 +49,31 @@ pub(super) enum SourceCommands {
     List,
 }
 
+#[derive(Debug, Subcommand)]
+#[command(arg_required_else_help = true)]
+pub(super) enum PackageSubCli {
+    /// Manually add package by name to current workspace.
+    /// The package must be within the sources.
+    Add,
+    /// Manually remove previously added package from current workspace.
+    /// The package must be within the sources.
+    Remove,
+    /// Interactive manage the packages in current workspace.
+    Change,
+}
+
 pub(super) fn run() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::Init(args)) => {
-            return cmd_handler_init(args);
+        Some(Commands::Init { force }) => {
+            return cmd_handler_init(&InitArgs { force: *force });
         }
-        Some(Commands::Source(command)) => {
-            return cmd_handler_source_sub_cli(&command.command);
+        Some(Commands::Source { command }) => {
+            return cmd_handler_source_sub_cli(command);
+        }
+        Some(Commands::Package { command }) => {
+            return cmd_handler_package_sub_cli(command);
         }
         Some(Commands::Check) => {
             return cmd_handler_check();
@@ -69,6 +84,9 @@ pub(super) fn run() -> Result<()> {
     Ok(())
 }
 
+struct InitArgs {
+    force: bool,
+}
 fn cmd_handler_init(args: &InitArgs) -> Result<()> {
     if !args.force && Config::healthcheck().is_ok() {
         println!("init passed");
@@ -90,18 +108,17 @@ fn cmd_handler_check() -> Result<()> {
     bail!("check pass failed")
 }
 
-fn cmd_handler_source_sub_cli(command: &Option<SourceCommands>) -> Result<()> {
+fn cmd_handler_source_sub_cli(command: &SourceSubCli) -> Result<()> {
     match command {
-        Some(SourceCommands::Add { dir }) => {
+        SourceSubCli::Add { dir } => {
             cmd_handler_source_add(dir)?;
         }
-        Some(SourceCommands::Remove { dir }) => {
+        SourceSubCli::Remove { dir } => {
             cmd_handler_source_remove(dir)?;
         }
-        Some(SourceCommands::List) => {
+        SourceSubCli::List => {
             cmd_handler_source_list()?;
         }
-        None => {}
     }
     Ok(())
 }
@@ -161,5 +178,14 @@ fn cmd_handler_source_list() -> Result<()> {
         println!("{}: {}", source.id, source.path.display());
     }
 
+    Ok(())
+}
+
+fn cmd_handler_package_sub_cli(command: &PackageSubCli) -> Result<()> {
+    match command {
+        PackageSubCli::Add => {}
+        PackageSubCli::Remove => {}
+        PackageSubCli::Change => {}
+    }
     Ok(())
 }
