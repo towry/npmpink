@@ -1,4 +1,6 @@
+use anyhow::Result;
 use package_json::PackageJsonManager;
+use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -32,6 +34,30 @@ impl Workspace {
         } else {
             self.dir.canonicalize().ok()
         }
+    }
+
+    fn is_npm_workspaces_project(&mut self) -> bool {
+        let Some(pkg) = self.package_json_manager.read_ref().ok() else {
+            return false;
+        };
+
+        if pkg.workspaces.as_ref().map_or(false, |w| w.len() > 0) {
+            return true;
+        }
+
+        // TODO: check pnpm workspace lockfile.
+
+        false
+    }
+
+    /// Get package jsons under current workspace if it is
+    /// npm multiple projects workspace.
+    pub(crate) fn get_package_jsons(&mut self) -> Result<impl Iterator<Item = String>> {
+        if !self.is_npm_workspaces_project() {
+            return Ok(std::iter::empty::<String>());
+        }
+
+        Ok(std::iter::empty::<String>())
     }
 }
 
