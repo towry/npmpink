@@ -182,10 +182,18 @@ fn cmd_handler_source_list() -> Result<()> {
 }
 
 fn cmd_handler_package_sub_cli(command: &PackageSubCli) -> Result<()> {
+    // TODO: check current lockfile in the current workspace.
     match command {
         PackageSubCli::Add => {}
         PackageSubCli::Remove => {}
-        PackageSubCli::Change => {}
+        PackageSubCli::Change => {
+            cmd_handler_package_change()?;
+        }
     }
+    Ok(())
+}
+
+/// Change the workspace's packages.
+fn cmd_handler_package_change() -> Result<()> {
     Ok(())
 }
