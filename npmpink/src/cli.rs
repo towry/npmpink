@@ -45,7 +45,7 @@ pub(super) enum SourceCommands {
     /// Add source.
     Add { dir: String },
     /// Remove source.
-    Remove,
+    Remove { dir: String },
     /// List source.
     List,
 }
@@ -95,8 +95,8 @@ fn cmd_handler_source_sub_cli(command: &Option<SourceCommands>) -> Result<()> {
         Some(SourceCommands::Add { dir }) => {
             cmd_handler_source_add(dir)?;
         }
-        Some(SourceCommands::Remove) => {
-            println!("remove source..");
+        Some(SourceCommands::Remove { dir }) => {
+            cmd_handler_source_remove(dir)?;
         }
         Some(SourceCommands::List) => {
             cmd_handler_source_list()?;
@@ -128,6 +128,27 @@ fn cmd_handler_source_add(dir: &String) -> Result<()> {
     }
 
     config.sources.push(source);
+    config.flush()?;
+
+    Ok(())
+}
+
+fn cmd_handler_source_remove(dir: &String) -> Result<()> {
+    let wk = Workspace::init_from_dir(dir);
+
+    let Ok(mut config) = appConfig.lock() else {
+        bail!("Failed to get app config");
+    };
+    let Some(absolute_dir) = wk.absolute_dir() else {
+        bail!("Not an valid directory");
+    };
+
+    let source = Source::new(absolute_dir);
+    if !config.has_source(&source.id) {
+        return Ok(());
+    }
+
+    config.sources.retain(|s| s.id != source.id);
     config.flush()?;
 
     Ok(())
