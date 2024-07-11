@@ -1,6 +1,8 @@
+mod package_json_walker;
+
 use anyhow::Result;
 use package_json::PackageJsonManager;
-use std::iter::Iterator;
+use package_json_walker::*;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -52,12 +54,12 @@ impl Workspace {
 
     /// Get package jsons under current workspace if it is
     /// npm multiple projects workspace.
-    pub(crate) fn get_package_jsons(&mut self) -> Result<impl Iterator<Item = String>> {
+    pub(crate) fn get_package_jsons(&mut self) -> Result<impl Iterator<Item = PathBuf>> {
         if !self.is_npm_workspaces_project() {
-            return Ok(std::iter::empty::<String>());
+            // return Ok(std::iter::empty::<PathBuf>());
         }
 
-        Ok(std::iter::empty::<String>())
+        walk_package_jsons_under_path(&self.dir)
     }
 }
 

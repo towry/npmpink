@@ -1,0 +1,10 @@
+{
+  "name": "fixtures_npm_workspaces",
+  "version": "0.0.1",
+  "workspaces": [
+    "workspace-a",
+    "workspace-b",
+    "workspace-c",
+    "nested/workspace-d"
+  ]
+}
