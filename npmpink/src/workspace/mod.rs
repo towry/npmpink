@@ -43,7 +43,7 @@ impl Workspace {
             return false;
         };
 
-        if pkg.workspaces.as_ref().map_or(false, |w| w.len() > 0) {
+        if pkg.workspaces.as_ref().map_or(false, |w| !w.is_empty()) {
             return true;
         }
 
@@ -54,7 +54,7 @@ impl Workspace {
 
     /// Get package jsons under current workspace if it is
     /// npm multiple projects workspace.
-    pub(crate) fn get_package_jsons(&mut self) -> Result<impl Iterator<Item = PathBuf>> {
+    pub(crate) fn get_package_jsons(&mut self) -> Result<impl Iterator<Item = PathBuf> + '_> {
         if !self.is_npm_workspaces_project() {
             // return Ok(std::iter::empty::<PathBuf>());
         }

@@ -4,7 +4,7 @@ use wax::Glob;
 
 pub(super) fn walk_package_jsons_under_path(
     path: impl AsRef<Path>,
-) -> Result<impl Iterator<Item = PathBuf>> {
+) -> Result<impl Iterator<Item = PathBuf> + 'static> {
     let glob = Glob::new("**/package.json")?;
     let walker = glob.walk(path).into_owned();
 

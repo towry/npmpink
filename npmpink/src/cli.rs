@@ -62,6 +62,23 @@ pub(super) enum PackageSubCli {
     Change,
 }
 
+impl PackageSubCli {
+    /// reduce from sources
+    fn workspaces(&self) -> Vec<Workspace> {
+        let config = appConfig.lock().unwrap();
+
+        // for source in config.sources.iter() {
+        //     println!("{}: {}", source.id, source.path.display());
+        // }
+
+        config
+            .sources
+            .iter()
+            .map(|s| Workspace::init_from_dir(&s.path))
+            .collect()
+    }
+}
+
 pub(super) fn run() -> Result<()> {
     let cli = Cli::parse();
 
@@ -181,19 +198,31 @@ fn cmd_handler_source_list() -> Result<()> {
     Ok(())
 }
 
+/// handle packages, like list packages from all sources.
 fn cmd_handler_package_sub_cli(command: &PackageSubCli) -> Result<()> {
     // TODO: check current lockfile in the current workspace.
     match command {
         PackageSubCli::Add => {}
         PackageSubCli::Remove => {}
         PackageSubCli::Change => {
-            cmd_handler_package_change()?;
+            cmd_handler_package_change(command)?;
         }
     }
     Ok(())
 }
 
 /// Change the workspace's packages.
-fn cmd_handler_package_change() -> Result<()> {
+fn cmd_handler_package_change(package_cmd: &PackageSubCli) -> Result<()> {
+    let mut workspaces = package_cmd.workspaces();
+    let json_paths = workspaces
+        .iter_mut()
+        .flat_map(|w| w.get_package_jsons())
+        .flatten()
+        .map(|p| p.to_str().unwrap().to_string())
+        .collect::<Vec<String>>();
+
+    println!("{:?}", json_paths);
+
+    //
     Ok(())
 }
