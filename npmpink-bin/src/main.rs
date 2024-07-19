@@ -1,10 +1,4 @@
 mod cli;
-mod config;
-mod lockfile;
-mod package;
-mod source;
-mod tui;
-mod workspace;
 
 use cli::*;
 

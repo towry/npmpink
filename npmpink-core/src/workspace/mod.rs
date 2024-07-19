@@ -6,13 +6,13 @@ use package_json_walker::*;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
-pub(crate) struct Workspace {
-    pub(crate) dir: PathBuf,
-    pub(crate) package_json_manager: PackageJsonManager,
+pub struct Workspace {
+    pub dir: PathBuf,
+    pub package_json_manager: PackageJsonManager,
 }
 
 impl Workspace {
-    pub(crate) fn init_from_dir(path: impl AsRef<Path>) -> Self {
+    pub fn init_from_dir(path: impl AsRef<Path>) -> Self {
         let path = path.as_ref().to_path_buf();
         let pkg = PackageJsonManager::with_file_path(path.clone().join("package.json"));
 
@@ -23,14 +23,14 @@ impl Workspace {
     }
 
     /// Check workspace's package.json exists
-    pub(crate) fn is_ok_loosely(&self) -> bool {
+    pub fn is_ok_loosely(&self) -> bool {
         let pkg_path = self.dir.join("package.json");
         let path_exists_value = pkg_path.try_exists();
 
         path_exists_value.is_ok() && path_exists_value.unwrap()
     }
 
-    pub(crate) fn absolute_dir(&self) -> Option<PathBuf> {
+    pub fn absolute_dir(&self) -> Option<PathBuf> {
         if self.dir.is_absolute() {
             Some(self.dir.clone())
         } else {
@@ -54,7 +54,7 @@ impl Workspace {
 
     /// Get package jsons under current workspace if it is
     /// npm multiple projects workspace.
-    pub(crate) fn get_package_jsons(&mut self) -> Result<impl Iterator<Item = PathBuf> + '_> {
+    pub fn get_package_jsons(&mut self) -> Result<impl Iterator<Item = PathBuf> + '_> {
         if !self.is_npm_workspaces_project() {
             // return Ok(std::iter::empty::<PathBuf>());
         }

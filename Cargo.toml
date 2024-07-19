@@ -1,9 +1,9 @@
 # https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html
 [workspace]
 resolver = "2"
-members = ["npmpink"]
+members = ["npmpink-bin", "npmpink-core", "npmpink-tui"]
 # default package to operate with cargo etc.
-default-members = ["npmpink"]
+default-members = ["npmpink-bin"]
 
 [profile.release]
 panic = 'abort'

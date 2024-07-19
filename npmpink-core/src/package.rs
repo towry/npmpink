@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Default, Serialize, Deserialize, Debug)]
-pub(crate) struct Package {
+pub struct Package {
     pub name: String,
     pub version: String,
     pub location: String,

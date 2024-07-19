@@ -11,7 +11,7 @@ use thiserror::Error;
 
 lazy_static! {
     static ref ROOT_CONFIG_PATH: PathBuf = get_root_config_path();
-    pub(crate) static ref appConfig: Mutex<Config> = Mutex::new(Config::load_or_default());
+    pub static ref appConfig: Mutex<Config> = Mutex::new(Config::load_or_default());
 }
 
 fn get_root_config_path() -> PathBuf {
@@ -31,21 +31,21 @@ fn home_dir() -> Option<PathBuf> {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum Mode {
+pub enum Mode {
     Symlink,
     Copy,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub(crate) struct Config {
-    pub(crate) mode: Mode,
-    pub(crate) sources: Vec<Source>,
+pub struct Config {
+    pub mode: Mode,
+    pub sources: Vec<Source>,
 }
 
 // maybe move this to config_health.rs module.
 /// Health check for config
 #[derive(Debug, PartialEq, Error)]
-pub(crate) enum HealthCheckError {
+pub enum HealthCheckError {
     #[error("Config file does not exist")]
     ConfigFileNotExist,
     #[error("Config file is invalid")]
@@ -53,12 +53,12 @@ pub(crate) enum HealthCheckError {
 }
 
 impl Config {
-    pub(crate) fn root_config_path() -> &'static PathBuf {
+    pub fn root_config_path() -> &'static PathBuf {
         &ROOT_CONFIG_PATH
     }
 
     /// Do healthy check for root config
-    pub(crate) fn healthcheck() -> Result<(), HealthCheckError> {
+    pub fn healthcheck() -> Result<(), HealthCheckError> {
         use std::path;
 
         let config_path = Config::root_config_path();
@@ -73,7 +73,7 @@ impl Config {
         Ok(())
     }
 
-    pub(crate) fn create_from_default() -> Result<()> {
+    pub fn create_from_default() -> Result<()> {
         let root_config_path = Self::root_config_path();
         let mut file = fs::File::create(root_config_path)?;
         let content = serde_json::to_string_pretty(&Config::default()).unwrap();
@@ -96,11 +96,11 @@ impl Config {
         Config::default()
     }
 
-    pub(crate) fn has_source(&self, id: &str) -> bool {
+    pub fn has_source(&self, id: &str) -> bool {
         self.sources.iter().any(|s| s.id == id)
     }
 
-    pub(crate) fn flush(&self) -> std::io::Result<()> {
+    pub fn flush(&self) -> std::io::Result<()> {
         let root_config_path = Self::root_config_path();
         let content = serde_json::to_string_pretty(self).unwrap();
         fs::write(root_config_path, content.as_bytes())

@@ -7,7 +7,7 @@ use crate::package::Package;
 
 #[derive(PartialEq, Deserialize, Serialize, Debug)]
 pub struct LockfileContent {
-    version: String,
+    pub version: String,
     pub packages: BTreeMap<String, Package>,
 }
 

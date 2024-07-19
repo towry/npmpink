@@ -1,12 +1,12 @@
 // https://github.com/clap-rs/clap/blob/master/examples/git-derive.rs
 // https://docs.rs/clap/latest/clap/_derive/index.html#terminology
-use crate::source::Source;
-use crate::{
+use anyhow::{bail, Result};
+use clap::{Parser, Subcommand};
+use npmpink_core::source::Source;
+use npmpink_core::{
     config::{appConfig, Config},
     workspace::Workspace,
 };
-use anyhow::{bail, Result};
-use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]

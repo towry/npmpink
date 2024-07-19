@@ -1,0 +1,17 @@
+[package]
+name = "npmpink-bin"
+authors = ["Towry Wang <tovvry@gmail.com>"]
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "npk"
+path = "src/main.rs"
+
+[dependencies]
+npmpink-core = { path = "../npmpink-core", version = "0.1.0" }
+npmpink-tui = { path = "../npmpink-tui", version = "0.1.0" }
+
+# External
+clap = { version = "4.5.8", features = ["derive"] }
+anyhow = "1.0.86"

@@ -3,10 +3,10 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub(crate) struct Source {
+pub struct Source {
     /// Absolute path
-    pub(crate) path: PathBuf,
-    pub(crate) id: String,
+    pub path: PathBuf,
+    pub id: String,
 }
 
 impl Hash for Source {
@@ -22,7 +22,7 @@ fn hash_path_string(str: String) -> String {
 }
 
 impl Source {
-    pub(crate) fn new<P>(path: P) -> Self
+    pub fn new<P>(path: P) -> Self
     where
         P: AsRef<Path>,
     {
