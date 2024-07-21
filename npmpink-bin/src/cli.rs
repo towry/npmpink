@@ -216,7 +216,7 @@ fn cmd_handler_package_change(package_cmd: &PackageSubCli) -> Result<()> {
     let mut workspaces = package_cmd.workspaces();
     let json_paths = workspaces
         .iter_mut()
-        .flat_map(|w| w.get_package_jsons())
+        .flat_map(|w| w.package_jsons())
         .flatten()
         .map(|p| p.to_str().unwrap().to_string())
         .collect::<Vec<String>>();
