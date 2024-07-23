@@ -81,7 +81,9 @@ impl Workspace {
         let Some(lockpath) = self.lockfile_path() else {
             return Ok(LockfileContent::default());
         };
-        let lock_content = fs::read_to_string(lockpath)?;
+        let Some(lock_content) = fs::read_to_string(lockpath).ok() else {
+            return Ok(LockfileContent::default());
+        };
         LockfileContent::init_from_lockfile_string(lock_content)
     }
 

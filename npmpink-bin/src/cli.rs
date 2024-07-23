@@ -7,12 +7,19 @@ use npmpink_core::{
     config::{appConfig, Config},
     workspace::Workspace,
 };
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
 pub(crate) struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
+    #[arg(
+        long,
+        hide_default_value = true,
+        help = "Current workspace dir to run cli"
+    )]
+    cwd: Option<PathBuf>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -83,7 +90,10 @@ impl PackageSubCli {
 }
 
 pub(super) fn run() -> Result<()> {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
+    if cli.cwd.is_none() {
+        cli.cwd = std::env::current_dir().ok();
+    }
 
     match &cli.command {
         Some(Commands::Init { force }) => {
@@ -93,7 +103,7 @@ pub(super) fn run() -> Result<()> {
             return cmd_handler_source_sub_cli(command);
         }
         Some(Commands::Package { command }) => {
-            return cmd_handler_package_sub_cli(command);
+            return cmd_handler_package_sub_cli(&cli, command);
         }
         Some(Commands::Check) => {
             return cmd_handler_check();
@@ -205,30 +215,31 @@ fn cmd_handler_source_list() -> Result<()> {
 }
 
 /// handle packages, like list packages from all sources.
-fn cmd_handler_package_sub_cli(command: &PackageSubCli) -> Result<()> {
+fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()> {
     // TODO: check current lockfile in the current workspace.
     match command {
         PackageSubCli::Add => {}
         PackageSubCli::Remove => {}
         PackageSubCli::Change => {
-            cmd_handler_package_change(command)?;
+            cmd_handler_package_change(cli, command)?;
         }
     }
     Ok(())
 }
 
 /// Change the workspace's packages.
-fn cmd_handler_package_change(package_cmd: &PackageSubCli) -> Result<()> {
-    let workspaces = package_cmd.workspaces();
-    let json_paths = workspaces
-        .iter()
-        .flat_map(|w| w.package_jsons())
-        .flatten()
-        .map(|p| p.to_str().unwrap().to_string())
-        .collect::<Vec<String>>();
+fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<()> {
+    // let workspaces = package_cmd.workspaces();
+    // let json_paths = workspaces
+    //     .iter()
+    //     .flat_map(|w| w.package_jsons())
+    //     .flatten()
+    //     .map(|p| p.to_str().unwrap().to_string())
+    //     .collect::<Vec<String>>();
 
-    println!("{:?}", json_paths);
+    // println!("{:?}", json_paths);
 
-    //
+    let ws = Workspace::init_from_dir(cli.cwd.clone().unwrap());
+    ws.flush_lockfile()?;
     Ok(())
 }
