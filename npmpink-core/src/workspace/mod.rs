@@ -1,10 +1,11 @@
 mod package_json_walker;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Context, Result};
 use lazycell::LazyCell;
 use package_json::PackageJsonManager;
 use package_json_walker::*;
 use std::cell::RefCell;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::lockfile::LockfileContent;
@@ -48,6 +49,40 @@ impl Workspace {
         let mut dir = self.absolute_dir()?;
         dir.push("npmpink.lock");
         Some(dir)
+    }
+
+    pub fn lockfile(&self) -> Result<&LazyCell<LockfileContent>> {
+        if self.lockfile.filled() {
+            return Ok(&self.lockfile);
+        }
+
+        let lockfile = self.load_lockfile_or_default()?;
+        let _ = self.lockfile.fill(lockfile);
+
+        if !self.lockfile.filled() {
+            bail!("failed to get lockfile from current workspace");
+        }
+
+        Ok(&self.lockfile)
+    }
+
+    pub fn flush_lockfile(&self) -> Result<()> {
+        let lockfile_path = self.lockfile_path().context("failed to flush lockfile")?;
+        let lockfile = self
+            .lockfile()?
+            .borrow()
+            .context("failed to get lockfile")?;
+        let content = lockfile.to_json_string()?;
+
+        fs::write(lockfile_path, content.as_bytes()).map_err(anyhow::Error::msg)
+    }
+
+    fn load_lockfile_or_default(&self) -> Result<LockfileContent> {
+        let Some(lockpath) = self.lockfile_path() else {
+            return Ok(LockfileContent::default());
+        };
+        let lock_content = fs::read_to_string(lockpath)?;
+        LockfileContent::init_from_lockfile_string(lock_content)
     }
 
     fn is_npm_workspaces_project(&self) -> bool {
