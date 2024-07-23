@@ -23,13 +23,13 @@ pub(super) enum Commands {
         force: bool,
     },
 
-    /// Source manage.
+    /// Manage sources, source is target dir to look packages.
     Source {
         #[command(subcommand)]
         command: SourceSubCli,
     },
 
-    /// Package manage.
+    /// Manage packages, add, remove package from sources in current workspace.
     Package {
         #[command(subcommand)]
         command: PackageSubCli,
@@ -37,6 +37,9 @@ pub(super) enum Commands {
 
     /// Check packages in current workspace.
     Check,
+
+    /// Sync added packages to node_modules
+    Sync,
 }
 
 #[derive(Debug, Subcommand)]
@@ -95,6 +98,9 @@ pub(super) fn run() -> Result<()> {
         Some(Commands::Check) => {
             return cmd_handler_check();
         }
+        Some(Commands::Sync) => {
+            return Ok(());
+        }
         None => {}
     }
 
@@ -143,7 +149,7 @@ fn cmd_handler_source_sub_cli(command: &SourceSubCli) -> Result<()> {
 fn cmd_handler_source_add(dir: &String) -> Result<()> {
     let wk = Workspace::init_from_dir(dir);
 
-    if !wk.is_ok_loosely() {
+    if !wk.has_package_json() {
         bail!("workspace doesn't contains package.json");
     }
 

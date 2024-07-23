@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::default::Default;
 
 use crate::package::Package;
 
@@ -12,8 +13,27 @@ pub struct LockfileContent {
 }
 
 impl LockfileContent {
+    pub fn new() -> Self {
+        Default::default()
+    }
+    pub fn init_from_lockfile_string(content: String) -> Self {
+        serde_json::from_str(&content).unwrap_or(Default::default())
+    }
     pub fn is_empty() -> bool {
         true
+    }
+    pub fn add_package(&mut self, pkg_name: String, pkg: Package) -> &Self {
+        self.packages.insert(pkg_name, pkg);
+        self
+    }
+}
+
+impl Default for LockfileContent {
+    fn default() -> Self {
+        LockfileContent {
+            version: "0.0.1".to_owned(),
+            packages: BTreeMap::new(),
+        }
     }
 }
 

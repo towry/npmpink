@@ -1,15 +1,19 @@
 mod package_json_walker;
 
-use anyhow::Result;
+use anyhow::{anyhow, bail, Result};
+use lazycell::LazyCell;
 use package_json::PackageJsonManager;
 use package_json_walker::*;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
+use crate::lockfile::LockfileContent;
+
 #[derive(Debug)]
 pub struct Workspace {
     pub dir: PathBuf,
     pub package_json_manager: RefCell<PackageJsonManager>,
+    pub lockfile: LazyCell<LockfileContent>,
 }
 
 impl Workspace {
@@ -20,11 +24,12 @@ impl Workspace {
         Workspace {
             dir: path,
             package_json_manager: RefCell::new(pkg),
+            lockfile: LazyCell::new(),
         }
     }
 
     /// Check workspace's package.json exists
-    pub fn is_ok_loosely(&self) -> bool {
+    pub fn has_package_json(&self) -> bool {
         let pkg_path = self.dir.join("package.json");
         let path_exists_value = pkg_path.try_exists();
 
@@ -37,6 +42,12 @@ impl Workspace {
         } else {
             self.dir.canonicalize().ok()
         }
+    }
+
+    pub fn lockfile_path(&self) -> Option<PathBuf> {
+        let mut dir = self.absolute_dir()?;
+        dir.push("npmpink.lock");
+        Some(dir)
     }
 
     fn is_npm_workspaces_project(&self) -> bool {
@@ -58,7 +69,7 @@ impl Workspace {
     /// npm multiple projects workspace.
     pub fn package_jsons(&self) -> Result<impl Iterator<Item = PathBuf> + '_> {
         if !self.is_npm_workspaces_project() {
-            // return Ok(std::iter::empty::<PathBuf>());
+            bail!("not workspaces");
         }
 
         walk_package_jsons_under_path(&self.dir)
@@ -91,7 +102,7 @@ mod tests {
         let pkg_path = concat!(env!("CARGO_WORKSPACE_DIR"), "assets_/dummy/");
         let wk = Workspace::init_from_dir(pkg_path);
 
-        assert!(wk.is_ok_loosely());
+        assert!(wk.has_package_json());
     }
 
     #[test]
