@@ -74,7 +74,7 @@ pub(super) enum PackageSubCli {
 
 impl PackageSubCli {
     /// reduce from sources
-    fn workspaces(&self) -> Vec<Workspace> {
+    pub(super) fn workspaces(&self) -> Vec<Workspace> {
         let config = appConfig.lock().unwrap();
 
         // for source in config.sources.iter() {
@@ -227,6 +227,7 @@ fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()>
     Ok(())
 }
 
+/// https://github.com/mikaelmello/inquire/blob/main/inquire/examples/multiselect.rs
 /// Change the workspace's packages.
 fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<()> {
     // let workspaces = package_cmd.workspaces();
