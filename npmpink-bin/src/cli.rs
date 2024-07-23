@@ -213,9 +213,9 @@ fn cmd_handler_package_sub_cli(command: &PackageSubCli) -> Result<()> {
 
 /// Change the workspace's packages.
 fn cmd_handler_package_change(package_cmd: &PackageSubCli) -> Result<()> {
-    let mut workspaces = package_cmd.workspaces();
+    let workspaces = package_cmd.workspaces();
     let json_paths = workspaces
-        .iter_mut()
+        .iter()
         .flat_map(|w| w.package_jsons())
         .flatten()
         .map(|p| p.to_str().unwrap().to_string())

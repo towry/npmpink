@@ -3,12 +3,13 @@ mod package_json_walker;
 use anyhow::Result;
 use package_json::PackageJsonManager;
 use package_json_walker::*;
+use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct Workspace {
     pub dir: PathBuf,
-    pub package_json_manager: PackageJsonManager,
+    pub package_json_manager: RefCell<PackageJsonManager>,
 }
 
 impl Workspace {
@@ -18,7 +19,7 @@ impl Workspace {
 
         Workspace {
             dir: path,
-            package_json_manager: pkg,
+            package_json_manager: RefCell::new(pkg),
         }
     }
 
@@ -38,8 +39,9 @@ impl Workspace {
         }
     }
 
-    fn is_npm_workspaces_project(&mut self) -> bool {
-        let Some(pkg) = self.package_json_manager.read_ref().ok() else {
+    fn is_npm_workspaces_project(&self) -> bool {
+        let mut pkg = self.package_json_manager.borrow_mut();
+        let Some(pkg) = pkg.read_ref().ok() else {
             return false;
         };
 
@@ -54,7 +56,7 @@ impl Workspace {
 
     /// Get package jsons under current workspace if it is
     /// npm multiple projects workspace.
-    pub fn package_jsons(&mut self) -> Result<impl Iterator<Item = PathBuf> + '_> {
+    pub fn package_jsons(&self) -> Result<impl Iterator<Item = PathBuf> + '_> {
         if !self.is_npm_workspaces_project() {
             // return Ok(std::iter::empty::<PathBuf>());
         }
@@ -69,8 +71,8 @@ mod tests {
 
     #[test]
     fn test_workspace_init_from_path_error() {
-        let mut wk = Workspace::init_from_dir("/path_that_must_not_exit");
-        let pkg = &mut wk.package_json_manager;
+        let wk = Workspace::init_from_dir("/path_that_must_not_exit");
+        let pkg = &mut wk.package_json_manager.borrow_mut();
 
         assert!(pkg.read_ref().is_err());
     }
@@ -78,8 +80,8 @@ mod tests {
     #[test]
     fn test_workspace_init_from_realpath() {
         let pkg_path = concat!(env!("CARGO_WORKSPACE_DIR"), "assets_/dummy/");
-        let mut wk = Workspace::init_from_dir(pkg_path);
-        let pkg = &mut wk.package_json_manager;
+        let wk = Workspace::init_from_dir(pkg_path);
+        let pkg = &mut wk.package_json_manager.borrow_mut();
 
         assert!(pkg.read_ref().is_ok());
     }
