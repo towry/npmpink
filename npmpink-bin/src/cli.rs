@@ -2,6 +2,8 @@
 // https://docs.rs/clap/latest/clap/_derive/index.html#terminology
 use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
+use npmpink_core::iterators::packages_from_source;
+use npmpink_core::package::Package;
 use npmpink_core::source::Source;
 use npmpink_core::{
     config::{appConfig, Config},
@@ -236,15 +238,14 @@ fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
 /// https://github.com/mikaelmello/inquire/blob/main/inquire/examples/multiselect.rs
 /// Change the workspace's packages.
 fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<()> {
-    // let workspaces = package_cmd.workspaces();
-    // let json_paths = workspaces
-    //     .iter()
-    //     .flat_map(|w| w.package_jsons())
-    //     .flatten()
-    //     .map(|p| p.to_str().unwrap().to_string())
-    //     .collect::<Vec<String>>();
+    let config = appConfig.lock().unwrap();
+    let pkgs = config
+        .sources
+        .iter()
+        .flat_map(packages_from_source)
+        .collect::<Vec<Package>>();
 
-    // println!("{:?}", json_paths);
+    println!("{:?}", pkgs);
 
     let _ws = Workspace::init_from_dir(cli.cwd.clone().unwrap());
     // ws.flush_lockfile()?;

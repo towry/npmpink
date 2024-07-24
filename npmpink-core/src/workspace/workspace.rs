@@ -73,7 +73,8 @@ impl Workspace {
     /// npm multiple projects workspace.
     pub fn walk_package_jsons(&self) -> Result<impl Iterator<Item = PathBuf> + '_> {
         if !self.is_npm_workspaces_project() {
-            bail!("not workspaces");
+            // bail!("not a npm workspace");
+            return Ok(Vec::<PathBuf>::new().into_iter());
         }
 
         walk_package_jsons_under_path(&self.dir)
