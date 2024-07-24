@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Default, Serialize, Deserialize, Debug, Clone)]
+#[derive(PartialEq, Default, Serialize, Deserialize, Debug, Clone, Eq, Hash)]
 pub struct Package {
     pub name: String,
     pub dir: String,

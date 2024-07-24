@@ -11,6 +11,8 @@ use npmpink_core::{
 };
 use std::path::PathBuf;
 
+use crate::select_packages::select_packages;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
 pub(crate) struct Cli {
@@ -245,9 +247,8 @@ fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<
         .flat_map(packages_from_source)
         .collect::<Vec<Package>>();
 
-    println!("{:?}", pkgs);
+    select_packages(&pkgs);
 
-    let _ws = Workspace::init_from_dir(cli.cwd.clone().unwrap());
     // ws.flush_lockfile()?;
     Ok(())
 }
