@@ -1,7 +1,6 @@
 use super::package_json_walker::*;
-use anyhow::{bail, Result};
 use package_json::{PackageJson, PackageJsonManager};
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{RefCell, RefMut};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -12,8 +11,10 @@ pub struct Workspace {
 
 impl Workspace {
     pub fn init_from_dir(path: impl AsRef<Path>) -> Self {
-        let path = path.as_ref().to_path_buf();
+        let path = path.as_ref().to_path_buf().canonicalize().unwrap();
         let pkg = PackageJsonManager::with_file_path(path.clone().join("package.json"));
+
+        dbg!("{}", path.clone());
 
         Workspace {
             dir: path,
