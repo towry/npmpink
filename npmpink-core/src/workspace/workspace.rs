@@ -73,11 +73,11 @@ impl Workspace {
     /// npm multiple projects workspace.
     pub fn walk_package_jsons(&self) -> Result<impl Iterator<Item = PathBuf> + '_> {
         if !self.is_npm_workspaces_project() {
-            // bail!("not a npm workspace");
-            return Ok(Vec::<PathBuf>::new().into_iter());
+            return Ok(Box::new(::std::iter::empty()) as Box<dyn Iterator<Item = PathBuf>>);
         }
 
         walk_package_jsons_under_path(&self.dir)
+            .map(|x| Box::new(x) as Box<dyn Iterator<Item = PathBuf>>)
     }
 }
 
