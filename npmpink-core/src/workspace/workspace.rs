@@ -1,18 +1,13 @@
 use super::package_json_walker::*;
-use anyhow::{bail, Context, Result};
-use lazycell::LazyCell;
-use package_json::PackageJsonManager;
-use std::cell::RefCell;
-use std::fs;
+use anyhow::{bail, Result};
+use package_json::{PackageJson, PackageJsonManager};
+use std::cell::{Ref, RefCell, RefMut};
 use std::path::{Path, PathBuf};
-
-use crate::lockfile::LockfileContent;
 
 #[derive(Debug)]
 pub struct Workspace {
     pub dir: PathBuf,
     pub package_json_manager: RefCell<PackageJsonManager>,
-    pub lockfile: LazyCell<LockfileContent>,
 }
 
 impl Workspace {
@@ -23,8 +18,24 @@ impl Workspace {
         Workspace {
             dir: path,
             package_json_manager: RefCell::new(pkg),
-            lockfile: LazyCell::new(),
         }
+    }
+
+    /// see https://docs.rs/package-json/0.4.0/package_json/struct.PackageJsonManager.html#method.read_ref
+    /// don't know why it must require mut self, so we have to use RefMut here.
+    pub fn package_json_manager(&self) -> RefMut<'_, PackageJsonManager> {
+        self.package_json_manager.borrow_mut()
+    }
+    pub fn package_json(&self) -> RefMut<'_, PackageJson> {
+        let pkg_manager = self.package_json_manager();
+
+        // Is there a way to map RefMut to Ref?
+        // seems not, take ref from mut ref is forbidden, as there should be only one mut ref at a
+        // time,
+        // or mutiple immutable ref at a time.
+        RefMut::map(pkg_manager, |pkg_manager: &mut PackageJsonManager| {
+            pkg_manager.read_mut().unwrap()
+        })
     }
 
     /// Check workspace's package.json exists
@@ -41,48 +52,6 @@ impl Workspace {
         } else {
             self.dir.canonicalize().ok()
         }
-    }
-
-    pub fn lockfile_path(&self) -> Option<PathBuf> {
-        let mut dir = self.absolute_dir()?;
-        dir.push("npmpink.lock");
-        Some(dir)
-    }
-
-    pub fn lockfile(&self) -> Result<&LazyCell<LockfileContent>> {
-        if self.lockfile.filled() {
-            return Ok(&self.lockfile);
-        }
-
-        let lockfile = self.load_lockfile_or_default()?;
-        let _ = self.lockfile.fill(lockfile);
-
-        if !self.lockfile.filled() {
-            bail!("failed to get lockfile from current workspace");
-        }
-
-        Ok(&self.lockfile)
-    }
-
-    pub fn flush_lockfile(&self) -> Result<()> {
-        let lockfile_path = self.lockfile_path().context("failed to flush lockfile")?;
-        let lockfile = self
-            .lockfile()?
-            .borrow()
-            .context("failed to get lockfile")?;
-        let content = lockfile.to_json_string()?;
-
-        fs::write(lockfile_path, content.as_bytes()).map_err(anyhow::Error::msg)
-    }
-
-    fn load_lockfile_or_default(&self) -> Result<LockfileContent> {
-        let Some(lockpath) = self.lockfile_path() else {
-            return Ok(LockfileContent::default());
-        };
-        let Some(lock_content) = fs::read_to_string(lockpath).ok() else {
-            return Ok(LockfileContent::default());
-        };
-        LockfileContent::init_from_lockfile_string(lock_content)
     }
 
     fn is_npm_workspaces_project(&self) -> bool {
@@ -102,7 +71,7 @@ impl Workspace {
 
     /// Get package jsons under current workspace if it is
     /// npm multiple projects workspace.
-    pub fn package_jsons(&self) -> Result<impl Iterator<Item = PathBuf> + '_> {
+    pub fn walk_package_jsons(&self) -> Result<impl Iterator<Item = PathBuf> + '_> {
         if !self.is_npm_workspaces_project() {
             bail!("not workspaces");
         }

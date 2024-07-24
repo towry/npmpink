@@ -1,11 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Default, Serialize, Deserialize, Debug)]
+#[derive(PartialEq, Default, Serialize, Deserialize, Debug, Clone)]
 pub struct Package {
     pub name: String,
-    pub version: String,
     pub location: String,
     pub source_id: String,
+}
+
+impl Package {
+    pub fn new(name: String, location: String, source_id: String) -> Self {
+        Package {
+            name,
+            location,
+            source_id,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -13,7 +22,6 @@ impl Package {
     pub(super) fn test_new() -> Self {
         Package {
             name: "foo".into(),
-            version: "bar".into(),
             location: "foo/bar".into(),
             source_id: "1".into(),
         }
@@ -35,7 +43,6 @@ mod tests {
 
         let pkg = Package {
             name: "foo".into(),
-            version: "1.0.0".into(),
             location: "bar".into(),
             source_id: "foo".into(),
         };
@@ -50,9 +57,6 @@ mod tests {
                 //
                 Token::String("name"),
                 Token::String("foo"),
-                //
-                Token::String("version"),
-                Token::String("1.0.0"),
                 //
                 Token::String("location"),
                 Token::String("bar"),

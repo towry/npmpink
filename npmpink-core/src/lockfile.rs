@@ -4,6 +4,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::default::Default;
+use std::iter::Iterator;
 
 use crate::package::Package;
 
@@ -27,8 +28,22 @@ impl LockfileContent {
         self.packages.insert(pkg_name, pkg);
         self
     }
+    pub fn remove_package(&mut self, pkg_name: String) -> &Self {
+        self.packages.remove(&pkg_name);
+        self
+    }
     pub fn to_json_string(&self) -> Result<String> {
         serde_json::to_string_pretty(self).map_err(anyhow::Error::from)
+    }
+    // Since we are allocate new iterator from packages, we need to use collect.
+    // and the return type have 'static bound means the receiver can hold it for infinite.
+    pub fn packages_iter(&self) -> impl Iterator<Item = Package> + 'static {
+        self.packages
+            .values()
+            .cloned()
+            // use collect to allocate the iterator
+            .collect::<Vec<Package>>()
+            .into_iter()
     }
 }
 

@@ -227,6 +227,12 @@ fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()>
     Ok(())
 }
 
+/// List packages from sources that not in the lockfile.
+/// If multiple packages with same name is selected, override the old one in lockfile.
+fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
+    Ok(())
+}
+
 /// https://github.com/mikaelmello/inquire/blob/main/inquire/examples/multiselect.rs
 /// Change the workspace's packages.
 fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<()> {
@@ -240,7 +246,7 @@ fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<
 
     // println!("{:?}", json_paths);
 
-    let ws = Workspace::init_from_dir(cli.cwd.clone().unwrap());
-    ws.flush_lockfile()?;
+    let _ws = Workspace::init_from_dir(cli.cwd.clone().unwrap());
+    // ws.flush_lockfile()?;
     Ok(())
 }
