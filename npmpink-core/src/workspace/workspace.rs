@@ -71,13 +71,15 @@ impl Workspace {
 
     /// Get package jsons under current workspace if it is
     /// npm multiple projects workspace.
-    pub fn walk_package_jsons(&self) -> Result<impl Iterator<Item = PathBuf> + '_> {
-        if !self.is_npm_workspaces_project() {
-            return Ok(Box::new(::std::iter::empty()) as Box<dyn Iterator<Item = PathBuf>>);
-        }
+    pub fn walk_package_jsons(&self) -> impl Iterator<Item = PathBuf> + '_ {
+        let i: Box<dyn Iterator<Item = PathBuf>> = if !self.is_npm_workspaces_project() {
+            Box::new(std::iter::empty())
+        } else {
+            walk_package_jsons_under_path(&self.dir)
+                .map_or(Box::new(std::iter::empty()), |v| Box::new(v))
+        };
 
-        walk_package_jsons_under_path(&self.dir)
-            .map(|x| Box::new(x) as Box<dyn Iterator<Item = PathBuf>>)
+        i
     }
 }
 
