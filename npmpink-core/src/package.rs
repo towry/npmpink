@@ -3,15 +3,15 @@ use serde::{Deserialize, Serialize};
 #[derive(PartialEq, Default, Serialize, Deserialize, Debug, Clone)]
 pub struct Package {
     pub name: String,
-    pub location: String,
+    pub dir: String,
     pub source_id: String,
 }
 
 impl Package {
-    pub fn new(name: String, location: String, source_id: String) -> Self {
+    pub fn new(name: String, dir: String, source_id: String) -> Self {
         Package {
             name,
-            location,
+            dir,
             source_id,
         }
     }
@@ -22,7 +22,7 @@ impl Package {
     pub(super) fn test_new() -> Self {
         Package {
             name: "foo".into(),
-            location: "foo/bar".into(),
+            dir: "foo/bar".into(),
             source_id: "1".into(),
         }
     }
@@ -43,7 +43,7 @@ mod tests {
 
         let pkg = Package {
             name: "foo".into(),
-            location: "bar".into(),
+            dir: "bar".into(),
             source_id: "foo".into(),
         };
 

@@ -14,8 +14,6 @@ impl Workspace {
         let path = path.as_ref().to_path_buf().canonicalize().unwrap();
         let pkg = PackageJsonManager::with_file_path(path.clone().join("package.json"));
 
-        dbg!("{}", path.clone());
-
         Workspace {
             dir: path,
             package_json_manager: RefCell::new(pkg),
