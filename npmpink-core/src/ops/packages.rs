@@ -2,7 +2,7 @@ use crate::{package::Package, source::Source, workspace::Workspace};
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
-pub fn packages_jsons(workspaces: Vec<Workspace>) -> Vec<String> {
+pub fn packages_jsons_of_workspaces(workspaces: Vec<Workspace>) -> Vec<String> {
     workspaces
         .iter()
         .flat_map(|w| w.walk_package_jsons())
@@ -28,9 +28,9 @@ pub fn packages_from_source(source: &Source) -> Vec<Package> {
         .collect()
 }
 
-pub fn difference_packages(left: Vec<Package>, right: Vec<Package>) -> Vec<Package> {
-    let lhs = HashSet::<Package>::from_iter(left);
+pub fn difference_packages<'a>(left: &'a [Package], right: &'a [Package]) -> Vec<&'a Package> {
+    let lhs = HashSet::<&Package>::from_iter(left);
     let rhs = HashSet::from_iter(right);
 
-    lhs.difference(&rhs).cloned().collect()
+    lhs.difference(&rhs).cloned().collect::<Vec<&Package>>()
 }

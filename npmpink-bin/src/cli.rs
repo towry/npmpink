@@ -2,14 +2,15 @@
 // https://docs.rs/clap/latest/clap/_derive/index.html#terminology
 use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
+use npmpink_core::ops::packages::{difference_packages, packages_from_source};
 use npmpink_core::package::Package;
 use npmpink_core::source::Source;
 use npmpink_core::target::Target;
-use npmpink_core::utils::packages_from_source;
 use npmpink_core::{
     config::{appConfig, Config},
     workspace::Workspace,
 };
+use std::cell::{RefCell, RefMut};
 use std::path::PathBuf;
 
 use crate::prompts::select_packages;
@@ -25,6 +26,14 @@ pub(crate) struct Cli {
         help = "Current workspace dir to run cli"
     )]
     cwd: Option<PathBuf>,
+    #[clap(skip)]
+    target: Option<RefCell<Target>>,
+}
+
+impl Cli {
+    pub(super) fn target(&self) -> RefMut<'_, Target> {
+        self.target.as_ref().unwrap().borrow_mut()
+    }
 }
 
 #[derive(Subcommand, Debug)]
@@ -77,28 +86,14 @@ pub(super) enum PackageSubCli {
     Change,
 }
 
-impl PackageSubCli {
-    /// reduce from sources
-    pub(super) fn workspaces(&self) -> Vec<Workspace> {
-        let config = appConfig.lock().unwrap();
-
-        // for source in config.sources.iter() {
-        //     println!("{}: {}", source.id, source.path.display());
-        // }
-
-        config
-            .sources
-            .iter()
-            .map(|s| Workspace::init_from_dir(&s.path))
-            .collect()
-    }
-}
-
 pub(super) fn run() -> Result<()> {
     let mut cli = Cli::parse();
     if cli.cwd.is_none() {
         cli.cwd = std::env::current_dir().ok();
     }
+    cli.target = Some(RefCell::new(Target::init_from_dir(
+        cli.cwd.as_ref().unwrap(),
+    )));
 
     match &cli.command {
         Some(Commands::Init { force }) => {
@@ -223,10 +218,12 @@ fn cmd_handler_source_list() -> Result<()> {
 fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()> {
     // TODO: check current lockfile in the current workspace.
     match command {
-        PackageSubCli::Add => {}
+        PackageSubCli::Add => {
+            cmd_handler_package_add(cli)?;
+        }
         PackageSubCli::Remove => {}
         PackageSubCli::Change => {
-            cmd_handler_package_change(cli, command)?;
+            cmd_handler_package_change(cli)?;
         }
     }
     Ok(())
@@ -234,23 +231,26 @@ fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()>
 
 /// List packages from sources that not in the lockfile.
 /// If multiple packages with same name is selected, override the old one in lockfile.
-fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
+fn cmd_handler_package_change(_cli: &Cli) -> Result<()> {
     Ok(())
 }
 
 /// https://github.com/mikaelmello/inquire/blob/main/inquire/examples/multiselect.rs
 /// Change the workspace's packages.
-fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<()> {
+fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
     let config = appConfig.lock().unwrap();
+    let target = cli.target();
     let pkgs = config
         .sources
         .iter()
         .flat_map(packages_from_source)
         .collect::<Vec<Package>>();
+    let lockfile_pkgs = {
+        let lockfile = target.lockfile()?;
+        lockfile.packages_iter().collect::<Vec<Package>>()
+    };
 
-    let picked = select_packages(&pkgs)?;
-
-    let target = Target::init_from_dir(cli.cwd.as_ref().unwrap());
+    let picked = select_packages(difference_packages(&pkgs, &lockfile_pkgs).as_slice())?;
     {
         let mut lockfile = target.lockfile_mut()?;
 
@@ -260,9 +260,28 @@ fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<
     }
     target.flush_lockfile()?;
 
-    /////////
-    println!("done");
+    println!("{} packages added", picked.len());
+    Ok(())
+}
 
-    // ws.flush_lockfile()?;
+fn cmd_handler_package_remove(cli: &Cli) -> Result<()> {
+    let target = cli.target();
+
+    let lockfile_pkgs = {
+        let lockfile = target.lockfile()?;
+        lockfile.packages_iter().collect::<Vec<Package>>()
+    };
+
+    let picked = select_packages(lockfile_pkgs.as_slice())?;
+    {
+        let mut lockfile = target.lockfile_mut()?;
+
+        for pkg in picked.iter().cloned().cloned() {
+            lockfile.remove_package(pkg.name.clone());
+        }
+    }
+    target.flush_lockfile()?;
+
+    println!("{} packages removed", picked.len());
     Ok(())
 }

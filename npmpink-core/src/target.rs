@@ -8,7 +8,7 @@ use std::fs;
 use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
-
+#[derive(Debug)]
 pub struct Target {
     pub workspace: Workspace,
     pub lockfile: LazyCell<RefCell<LockfileContent>>,
@@ -39,9 +39,7 @@ impl<'s> Target {
 
     pub fn flush_lockfile(&self) -> Result<()> {
         let lockfile_path = self.lockfile_path().context("failed to flush lockfile")?;
-        let lockfile = self
-            .lockfile()
-            .context("failed to get lockfile")?;
+        let lockfile = self.lockfile().context("failed to get lockfile")?;
         let content = lockfile.to_json_string()?;
 
         fs::write(lockfile_path, content.as_bytes()).map_err(anyhow::Error::msg)

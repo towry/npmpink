@@ -6,7 +6,7 @@ use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use npmpink_core::package::Package;
 use npmpink_tui::color::Color;
 
-pub fn select_packages(pkgs: &[Package]) -> Result<(Vec<&Package>)> {
+pub fn select_packages<'b, 'a: 'b>(pkgs: &'b [Package]) -> Result<Vec<Package>> {
     let formatter: MultiOptionFormatter<'_, String> = &|a| format!("{} selected", a.len());
     let opts: Vec<String> = pkgs.iter().map(|p| p.dir.clone()).collect();
     let theme = create_theme();
@@ -19,7 +19,8 @@ pub fn select_packages(pkgs: &[Package]) -> Result<(Vec<&Package>)> {
     Ok(ans
         .iter()
         .filter_map(|n| pkgs.get(n.index))
-        .collect::<Vec<&Package>>())
+        .cloned()
+        .collect::<Vec<Package>>())
 }
 
 fn rgb(color: Color) -> UiColor {
