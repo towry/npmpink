@@ -1,5 +1,5 @@
 mod cli;
-mod select_packages;
+mod prompts;
 
 use cli::*;
 

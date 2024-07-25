@@ -2,16 +2,17 @@
 // https://docs.rs/clap/latest/clap/_derive/index.html#terminology
 use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
-use npmpink_core::iterators::packages_from_source;
 use npmpink_core::package::Package;
 use npmpink_core::source::Source;
+use npmpink_core::target::Target;
+use npmpink_core::utils::packages_from_source;
 use npmpink_core::{
     config::{appConfig, Config},
     workspace::Workspace,
 };
 use std::path::PathBuf;
 
-use crate::select_packages::select_packages;
+use crate::prompts::select_packages;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
@@ -247,7 +248,20 @@ fn cmd_handler_package_change(cli: &Cli, package_cmd: &PackageSubCli) -> Result<
         .flat_map(packages_from_source)
         .collect::<Vec<Package>>();
 
-    select_packages(&pkgs);
+    let picked = select_packages(&pkgs)?;
+
+    let target = Target::init_from_dir(cli.cwd.as_ref().unwrap());
+    {
+        let mut lockfile = target.lockfile_mut()?;
+
+        for pkg in picked.iter().cloned().cloned() {
+            lockfile.add_package(pkg.name.clone(), pkg);
+        }
+    }
+    target.flush_lockfile()?;
+
+    /////////
+    println!("done");
 
     // ws.flush_lockfile()?;
     Ok(())
