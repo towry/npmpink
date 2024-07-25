@@ -82,8 +82,6 @@ pub(super) enum PackageSubCli {
     /// Manually remove previously added package from current workspace.
     /// The package must be within the sources.
     Remove,
-    /// Interactive manage the packages in current workspace.
-    Change,
 }
 
 pub(super) fn run() -> Result<()> {
@@ -223,16 +221,7 @@ fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()>
         PackageSubCli::Remove => {
             cmd_handler_package_remove(cli)?;
         }
-        PackageSubCli::Change => {
-            cmd_handler_package_change(cli)?;
-        }
     }
-    Ok(())
-}
-
-/// List packages from sources that not in the lockfile.
-/// If multiple packages with same name is selected, override the old one in lockfile.
-fn cmd_handler_package_change(_cli: &Cli) -> Result<()> {
     Ok(())
 }
 
