@@ -28,9 +28,12 @@ pub fn packages_from_source(source: &Source) -> Vec<Package> {
         .collect()
 }
 
-pub fn difference_packages<'a>(left: &'a [Package], right: &'a [Package]) -> Vec<&'a Package> {
+pub fn difference_packages<'a>(left: &'a [Package], right: &'a [Package]) -> Vec<Package> {
     let lhs = HashSet::<&Package>::from_iter(left);
     let rhs = HashSet::from_iter(right);
 
-    lhs.difference(&rhs).cloned().collect::<Vec<&Package>>()
+    lhs.difference(&rhs)
+        .cloned()
+        .cloned()
+        .collect::<Vec<Package>>()
 }

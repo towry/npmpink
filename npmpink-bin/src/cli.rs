@@ -216,12 +216,13 @@ fn cmd_handler_source_list() -> Result<()> {
 
 /// handle packages, like list packages from all sources.
 fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()> {
-    // TODO: check current lockfile in the current workspace.
     match command {
         PackageSubCli::Add => {
             cmd_handler_package_add(cli)?;
         }
-        PackageSubCli::Remove => {}
+        PackageSubCli::Remove => {
+            cmd_handler_package_remove(cli)?;
+        }
         PackageSubCli::Change => {
             cmd_handler_package_change(cli)?;
         }
@@ -254,7 +255,7 @@ fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
     {
         let mut lockfile = target.lockfile_mut()?;
 
-        for pkg in picked.iter().cloned().cloned() {
+        for pkg in picked.iter().cloned() {
             lockfile.add_package(pkg.name.clone(), pkg);
         }
     }
@@ -276,7 +277,7 @@ fn cmd_handler_package_remove(cli: &Cli) -> Result<()> {
     {
         let mut lockfile = target.lockfile_mut()?;
 
-        for pkg in picked.iter().cloned().cloned() {
+        for pkg in picked.iter().cloned() {
             lockfile.remove_package(pkg.name.clone());
         }
     }
