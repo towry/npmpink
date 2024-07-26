@@ -1,10 +1,17 @@
 use serde::{Deserialize, Serialize};
+use std::hash::{Hash, Hasher};
 
-#[derive(PartialEq, Default, Serialize, Deserialize, Debug, Clone, Eq, Hash)]
+#[derive(PartialEq, Default, Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct Package {
     pub name: String,
     pub dir: String,
     pub source_id: String,
+}
+
+impl Hash for Package {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (self.name.clone() + &self.source_id).hash(state);
+    }
 }
 
 impl Package {

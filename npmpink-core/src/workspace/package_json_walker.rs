@@ -8,7 +8,14 @@ pub(super) fn walk_package_jsons_under_path(
     let glob = Glob::new("**/package.json").unwrap().into_owned();
     let walker = glob
         .walk(path)
-        .not(any(["**/node_modules/**", "**/dist/**"]))
+        .not(any([
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/src/**",
+            "**/public/**",
+            "**/.git/**",
+            "**/.direnv/**",
+        ]))
         .unwrap();
 
     Ok(walker
