@@ -2,9 +2,7 @@
 // https://docs.rs/clap/latest/clap/_derive/index.html#terminology
 use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
-use npmpink_core::ops::packages::{
-    difference_packages, packages_from_source, packages_paths_from_workspace,
-};
+use npmpink_core::ops::packages::{difference_packages, packages_from_source};
 use npmpink_core::package::Package;
 use npmpink_core::source::Source;
 use npmpink_core::target::Target;
@@ -14,6 +12,7 @@ use npmpink_core::{
 };
 use std::cell::{RefCell, RefMut};
 use std::path::PathBuf;
+use std::process::Command;
 
 use crate::prompts::select_packages;
 
@@ -111,7 +110,7 @@ pub(super) fn run() -> Result<()> {
             return cmd_handler_check();
         }
         Some(Commands::Sync) => {
-            return Ok(());
+            return cmd_handler_sync(&cli);
         }
         None => {}
     }
@@ -130,6 +129,28 @@ fn cmd_handler_init(args: &InitArgs) -> Result<()> {
 
     // init config
     Config::create_from_default()
+}
+
+/// Update packages inside npmpink.lock to node modules
+fn cmd_handler_sync(cli: &Cli) -> Result<()> {
+    let target = cli.target();
+    let lockfile_pkgs = {
+        let lockfile = target.lockfile()?;
+        lockfile.packages_iter().collect::<Vec<Package>>()
+    };
+    let pkgs_paths = lockfile_pkgs.iter();
+
+    for pkg in pkgs_paths {
+        println!("> Link package {}: \n", pkg.name);
+        Command::new("pnpm")
+            .args(["link", &pkg.dir])
+            .status()
+            .map(|_| ())
+            .map_err(anyhow::Error::msg)?;
+        println!("\n> -----------------------------\n");
+    }
+
+    Ok(())
 }
 
 fn cmd_handler_check() -> Result<()> {

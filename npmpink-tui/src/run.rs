@@ -1,5 +1,5 @@
 use anyhow::Result;
 
-pub(crate) fn run() -> Result<()> {
+pub(crate) fn _run() -> Result<()> {
     Ok(())
 }
