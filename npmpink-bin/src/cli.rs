@@ -2,7 +2,9 @@
 // https://docs.rs/clap/latest/clap/_derive/index.html#terminology
 use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
-use npmpink_core::ops::packages::{difference_packages, packages_from_source};
+use npmpink_core::ops::packages::{
+    difference_packages, packages_from_source, packages_paths_from_workspace,
+};
 use npmpink_core::package::Package;
 use npmpink_core::source::Source;
 use npmpink_core::target::Target;
@@ -230,14 +232,13 @@ fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()>
     Ok(())
 }
 
-fn cmd_handler_package_list_all(cli: &Cli) -> Result<()> {
+fn cmd_handler_package_list_all(_cli: &Cli) -> Result<()> {
     let config = appConfig.lock().unwrap();
-    let pkgs = config
-        .sources
-        .iter()
-        .flat_map(packages_from_source)
-        .collect::<Vec<Package>>();
-    println!("{:?}", pkgs);
+    let pkgs = config.sources.iter().flat_map(packages_from_source);
+
+    for pkg in pkgs {
+        eprintln!("{:?}", pkg.name);
+    }
     Ok(())
 }
 

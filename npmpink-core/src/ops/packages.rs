@@ -12,6 +12,12 @@ pub fn packages_jsons_of_workspaces(workspaces: Vec<Workspace>) -> Vec<String> {
         .collect()
 }
 
+pub fn packages_paths_from_workspace(
+    workspace: &Workspace,
+) -> impl Iterator<Item = std::path::PathBuf> + '_ {
+    workspace.walk_package_jsons()
+}
+
 pub fn packages_from_source(source: &Source) -> Vec<Package> {
     let workspace = Workspace::init_from_dir(source.path.clone());
     workspace
