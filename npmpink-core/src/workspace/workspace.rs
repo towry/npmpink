@@ -1,40 +1,34 @@
 use super::package_json_walker::*;
-use package_json::{PackageJson, PackageJsonManager};
-use std::cell::{RefCell, RefMut};
+use anyhow::Result;
+use lazycell::LazyCell;
+use package_json_schema::{PackageJson, Workspaces};
+use std::cell::{Ref, RefCell, RefMut};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct Workspace {
     pub dir: PathBuf,
-    pub package_json_manager: RefCell<PackageJsonManager>,
+    pub package_json: LazyCell<PackageJson>,
 }
 
 impl Workspace {
     pub fn init_from_dir(path: impl AsRef<Path>) -> Self {
         let path = path.as_ref().to_path_buf().canonicalize().unwrap();
-        let pkg = PackageJsonManager::with_file_path(path.clone().join("package.json"));
 
         Workspace {
             dir: path,
-            package_json_manager: RefCell::new(pkg),
+            package_json: LazyCell::new(),
         }
     }
 
-    /// see https://docs.rs/package-json/0.4.0/package_json/struct.PackageJsonManager.html#method.read_ref
-    /// don't know why it must require mut self, so we have to use RefMut here.
-    pub fn package_json_manager(&self) -> RefMut<'_, PackageJsonManager> {
-        self.package_json_manager.borrow_mut()
-    }
-    pub fn package_json(&self) -> RefMut<'_, PackageJson> {
-        let pkg_manager = self.package_json_manager();
-
-        // Is there a way to map RefMut to Ref?
-        // seems not, take ref from mut ref is forbidden, as there should be only one mut ref at a
-        // time,
-        // or mutiple immutable ref at a time.
-        RefMut::map(pkg_manager, |pkg_manager: &mut PackageJsonManager| {
-            pkg_manager.read_mut().unwrap()
-        })
+    pub fn package_json(&self) -> Result<&PackageJson> {
+        let pkg = self.package_json.try_borrow_with(|| {
+            let pkg_path = self.absolute_dir()?.clone().join("package.json");
+            let pkg_content = fs::read_to_string(pkg_path)?;
+            PackageJson::try_from(pkg_content).map_err(anyhow::Error::msg)
+        });
+        pkg
     }
 
     /// Check workspace's package.json exists
@@ -45,33 +39,30 @@ impl Workspace {
         path_exists_value.is_ok() && path_exists_value.unwrap()
     }
 
-    pub fn absolute_dir(&self) -> Option<PathBuf> {
+    pub fn absolute_dir(&self) -> Result<PathBuf> {
         if self.dir.is_absolute() {
-            Some(self.dir.clone())
+            Ok(self.dir.clone())
         } else {
-            self.dir.canonicalize().ok()
+            self.dir.canonicalize().map_err(anyhow::Error::msg)
         }
     }
 
-    fn is_npm_workspaces_project(&self) -> bool {
-        let mut pkg = self.package_json_manager.borrow_mut();
-        let Some(pkg) = pkg.read_ref().ok() else {
-            return false;
-        };
-
-        if pkg.workspaces.as_ref().map_or(false, |w| !w.is_empty()) {
-            return true;
+    fn is_npm_workspaces_project(&self) -> Result<bool> {
+        let pkg = self.package_json()?;
+        match pkg.workspaces {
+            Some(Workspaces::List(ref list)) => Ok(!list.is_empty()),
+            Some(Workspaces::Object { ref packages, .. }) => {
+                Ok(packages.is_some() && !packages.clone().unwrap().is_empty())
+            }
+            _ => Ok(false),
         }
-
-        // TODO: check pnpm workspace lockfile.
-
-        false
     }
 
     /// Get package jsons under current workspace if it is
     /// npm multiple projects workspace.
     pub fn walk_package_jsons(&self) -> impl Iterator<Item = PathBuf> + '_ {
         self.is_npm_workspaces_project()
+            .unwrap()
             .then_some(())
             .and_then(|_| walk_package_jsons_under_path(&self.dir).ok())
             .into_iter()
@@ -82,23 +73,6 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use super::Workspace;
-
-    #[test]
-    fn test_workspace_init_from_path_error() {
-        let wk = Workspace::init_from_dir("/path_that_must_not_exit");
-        let pkg = &mut wk.package_json_manager.borrow_mut();
-
-        assert!(pkg.read_ref().is_err());
-    }
-
-    #[test]
-    fn test_workspace_init_from_realpath() {
-        let pkg_path = concat!(env!("CARGO_WORKSPACE_DIR"), "assets_/dummy/");
-        let wk = Workspace::init_from_dir(pkg_path);
-        let pkg = &mut wk.package_json_manager.borrow_mut();
-
-        assert!(pkg.read_ref().is_ok());
-    }
 
     #[test]
     fn test_workspace_ok_loosely() {
@@ -114,6 +88,6 @@ mod tests {
         let wk = Workspace::init_from_dir(pkg_path);
 
         let dir = wk.absolute_dir();
-        assert!(dir.is_some());
+        assert!(dir.is_ok());
     }
 }

@@ -82,6 +82,8 @@ pub(super) enum PackageSubCli {
     /// Manually remove previously added package from current workspace.
     /// The package must be within the sources.
     Remove,
+    /// list all
+    List,
 }
 
 pub(super) fn run() -> Result<()> {
@@ -165,7 +167,7 @@ fn cmd_handler_source_add(dir: &String) -> Result<()> {
         bail!("Failed to get app config");
     };
 
-    let Some(absolute_dir) = wk.absolute_dir() else {
+    let Some(absolute_dir) = wk.absolute_dir().ok() else {
         bail!("Not an valid directory");
     };
 
@@ -187,7 +189,7 @@ fn cmd_handler_source_remove(dir: &String) -> Result<()> {
     let Ok(mut config) = appConfig.lock() else {
         bail!("Failed to get app config");
     };
-    let Some(absolute_dir) = wk.absolute_dir() else {
+    let Some(absolute_dir) = wk.absolute_dir().ok() else {
         bail!("Not an valid directory");
     };
 
@@ -221,7 +223,21 @@ fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()>
         PackageSubCli::Remove => {
             cmd_handler_package_remove(cli)?;
         }
+        PackageSubCli::List => {
+            cmd_handler_package_list_all(cli)?;
+        }
     }
+    Ok(())
+}
+
+fn cmd_handler_package_list_all(cli: &Cli) -> Result<()> {
+    let config = appConfig.lock().unwrap();
+    let pkgs = config
+        .sources
+        .iter()
+        .flat_map(packages_from_source)
+        .collect::<Vec<Package>>();
+    println!("{:?}", pkgs);
     Ok(())
 }
 

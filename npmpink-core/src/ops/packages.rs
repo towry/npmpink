@@ -18,9 +18,14 @@ pub fn packages_from_source(source: &Source) -> Vec<Package> {
         .map(|p| {
             let ws_dir = p.parent().unwrap();
             let ws = Workspace::init_from_dir(ws_dir);
-            let pkg = ws.package_json();
+            let pkg = ws.package_json().unwrap();
+            if pkg.name.is_none() {
+                // FIXME: 1. ignore dirs in git ignores. 2. ignore package.json that doesn't have
+                // name.
+                dbg!(ws.absolute_dir());
+            }
             Package::new(
-                pkg.name.clone(),
+                pkg.name.clone().unwrap(),
                 ws_dir.to_str().unwrap().to_string(),
                 source.id.clone(),
             )

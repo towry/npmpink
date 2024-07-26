@@ -46,7 +46,7 @@ impl<'s> Target {
     }
 
     fn load_lockfile_or_default(&self) -> Result<LockfileContent> {
-        let Some(lockpath) = self.lockfile_path() else {
+        let Some(lockpath) = self.lockfile_path().ok() else {
             return Ok(LockfileContent::default());
         };
         let Some(lock_content) = fs::read_to_string(lockpath).ok() else {
@@ -55,10 +55,10 @@ impl<'s> Target {
         LockfileContent::init_from_lockfile_string(lock_content)
     }
 
-    pub fn lockfile_path(&self) -> Option<PathBuf> {
+    pub fn lockfile_path(&self) -> Result<PathBuf> {
         let mut dir = self.workspace.absolute_dir()?;
         dir.push("npmpink.lock");
-        Some(dir)
+        Ok(dir)
     }
 }
 
