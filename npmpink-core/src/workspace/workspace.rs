@@ -2,7 +2,6 @@ use super::package_json_walker::*;
 use anyhow::Result;
 use lazycell::LazyCell;
 use package_json_schema::{PackageJson, Workspaces};
-use std::cell::{Ref, RefCell, RefMut};
 use std::fs;
 use std::path::{Path, PathBuf};
 
