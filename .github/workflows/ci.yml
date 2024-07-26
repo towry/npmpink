@@ -1,0 +1,35 @@
+name: CI
+on:
+  pull_request:
+    paths-ignore: ["**/*.md"]
+  push:
+    paths-ignore: ["**/*.md"]
+    branches: [main, develop, staging]
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CI: 1
+  RUST_BACKTRACE: short
+  # https://doc.rust-lang.org/rustc/command-line-arguments.html#-d-set-lint-denied
+  # RUSTFLAGS: -D warnings
+  RUSTUP_MAX_RETRIES: 10
+  RUST_TEST_THREADS: 1
+
+jobs:
+  test:
+    name: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-deps: 1
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup shell env
+        run: nix develop
+      - name: test
+        run: cargo test
