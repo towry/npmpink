@@ -47,9 +47,9 @@ npk sync
 - [x] `npmpink package add`, basic.
 - [x] `npmpink package remove`, basic.
 - [x] `npmpink package sync`, basic.
-- [ ] Better package discovery.
-- [ ] Error message handle.
-- [ ] Pretty console output.
+- [x] Better package discovery.
+- [x] Error message handle.
+- [x] Pretty console output.
 
 - https://excalidraw.com/#json=7oqX_amJ0GwZaldcHYkHp,hKmYmGQI-AHS2k2AMQFReA
 - https://docs.rs/tui/0.19.0/tui/
