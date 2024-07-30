@@ -32,4 +32,4 @@ jobs:
       - name: Setup shell env
         run: nix develop
       - name: test
-        run: cargo test
+        run: cargo test --workspace

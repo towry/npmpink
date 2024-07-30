@@ -59,13 +59,13 @@ mod tests {
             &[
                 Token::Struct {
                     name: "Package",
-                    len: 4,
+                    len: 3,
                 },
                 //
                 Token::String("name"),
                 Token::String("foo"),
                 //
-                Token::String("location"),
+                Token::String("dir"),
                 Token::String("bar"),
                 //
                 Token::String("source_id"),

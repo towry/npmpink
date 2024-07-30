@@ -2,6 +2,7 @@
 // https://docs.rs/clap/latest/clap/_derive/index.html#terminology
 use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
+use npmpink_core::config::HealthCheckError;
 use npmpink_core::ops::packages::{difference_packages, packages_from_source};
 use npmpink_core::package::Package;
 use npmpink_core::source::Source;
@@ -123,14 +124,27 @@ struct InitArgs {
     force: bool,
 }
 fn cmd_handler_init(args: &InitArgs) -> Result<()> {
-    if !args.force {
-        let _ = Config::healthcheck()?;
-        shell()?.info("npmpink is already initialized")?;
-        return Ok(());
+    let result = Config::healthcheck();
+    match result {
+        Err(err) => match err {
+            HealthCheckError::ConfigFileNotExist => {}
+            _ => {
+                return Err(anyhow::Error::msg(err));
+            }
+        },
+        Ok(_) => {
+            if !args.force {
+                shell()?.info("npmpink is already initialized")?;
+
+                return Ok(());
+            }
+        }
     }
 
     // init config
-    Config::create_from_default()
+    Config::create_from_default()?;
+
+    shell()?.info("inited config file")
 }
 
 /// Update packages inside npmpink.lock to node modules
@@ -141,15 +155,16 @@ fn cmd_handler_sync(cli: &Cli) -> Result<()> {
         lockfile.packages_iter().collect::<Vec<Package>>()
     };
     let pkgs_paths = lockfile_pkgs.iter();
+    let mut sh = shell()?;
 
     for pkg in pkgs_paths {
-        println!("> Link package {}: \n", pkg.name);
+        sh.info(format!("> Link package {}: \n", pkg.name))?;
         Command::new("pnpm")
             .args(["link", &pkg.dir])
             .status()
             .map(|_| ())
             .map_err(anyhow::Error::msg)?;
-        println!("\n> -----------------------------\n");
+        sh.info("\n")?;
     }
 
     Ok(())
@@ -159,7 +174,7 @@ fn cmd_handler_check() -> Result<()> {
     let result = Config::healthcheck();
 
     if result.is_ok() {
-        println!("all checks pass");
+        shell()?.info("all checks pass")?;
         return Ok(());
     }
 
@@ -233,7 +248,7 @@ fn cmd_handler_source_list() -> Result<()> {
     let config = appConfig.lock().unwrap();
 
     for source in config.sources.iter() {
-        println!("{}: {}", source.id, source.path.display());
+        shell()?.info(format!("{}: {}", source.id, source.path.display()))?;
     }
 
     Ok(())
@@ -257,11 +272,18 @@ fn cmd_handler_package_sub_cli(cli: &Cli, command: &PackageSubCli) -> Result<()>
 
 fn cmd_handler_package_list_all(_cli: &Cli) -> Result<()> {
     let config = appConfig.lock().unwrap();
-    let pkgs = config.sources.iter().flat_map(packages_from_source);
+    let mut pkgs = config.sources.iter().flat_map(packages_from_source);
+
+    let mut sh = shell()?;
+
+    if pkgs.by_ref().peekable().peek().is_none() {
+        sh.warn("no packages to list")?;
+    }
 
     for pkg in pkgs {
-        eprintln!("{:?}", pkg.name);
+        sh.info(format!("{:?}", pkg.name))?;
     }
+
     Ok(())
 }
 
@@ -290,7 +312,7 @@ fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
     }
     target.flush_lockfile()?;
 
-    println!("{} packages added", picked.len());
+    shell()?.info(format!("{} packages added", picked.len()))?;
     Ok(())
 }
 
@@ -312,6 +334,6 @@ fn cmd_handler_package_remove(cli: &Cli) -> Result<()> {
     }
     target.flush_lockfile()?;
 
-    println!("{} packages removed", picked.len());
+    shell()?.info(format!("{} packages removed", picked.len()))?;
     Ok(())
 }
