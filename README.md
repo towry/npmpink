@@ -1,4 +1,5 @@
-![push](https://github.com/towry/npmpink/actions/workflows/ci.yml/badge.svg?event=push)
+![push](https://github.com/towry/npmpink/actions/workflows/ci.yml/badge.svg?event=push) <a href="https://github.com/towry/npmpink/releases/latest"><img src="https://img.shields.io/github/v/release/towry/npmpink?display_name=tag&label=release%3A%20npk" alt="release badge" /></a>
+
 
 # WIP
 
