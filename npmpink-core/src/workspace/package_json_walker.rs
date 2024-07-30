@@ -1,32 +1,15 @@
+use crate::walker;
 use anyhow::Result;
+use regex::bytes::Regex;
 use std::path::{Path, PathBuf};
-use wax::{any, Glob};
 
-pub(super) fn walk_package_jsons_under_path(
-    path: impl AsRef<Path>,
-) -> Result<impl 'static + Iterator<Item = PathBuf>> {
-    let glob = Glob::new("**/package.json").unwrap().into_owned();
-    let walker = glob
-        .walk(path)
-        .not(any([
-            "**/node_modules/**",
-            "**/dist/**",
-            "**/src/**",
-            "**/public/**",
-            "**/.git/**",
-            "**/.direnv/**",
-        ]))
-        .unwrap();
+pub(super) fn walk_package_jsons_under_path(path: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
+    let wo = walker::WalkOption::new(vec![Regex::new(r"package\.json$").unwrap()]);
+    let paths = walker::walk(&[path], Some(wo))?;
 
-    Ok(walker
-        .filter(|entry| entry.is_ok())
-        .map(|entry| entry.unwrap().path().to_path_buf())
-        // clone the path from the iterator results
-        .collect::<Vec<PathBuf>>()
-        .into_iter())
+    Ok(paths)
 }
 
-#[ignore]
 #[test]
 fn test_walk_package_jsons_under_path() {
     let workspace_root = concat!(
@@ -34,8 +17,6 @@ fn test_walk_package_jsons_under_path() {
         "assets_/fixtures_npm_workspaces"
     );
 
-    let paths = walk_package_jsons_under_path(workspace_root)
-        .unwrap()
-        .collect::<Vec<PathBuf>>();
+    let paths = walk_package_jsons_under_path(workspace_root).unwrap();
     assert!(paths.len() == 5);
 }

@@ -98,15 +98,12 @@ mod tests {
                 Token::String("foo_package"),
                 Token::Struct {
                     name: "Package",
-                    len: 4,
+                    len: 3,
                 },
                 Token::String("name"),
                 Token::String("foo"),
                 //
-                Token::String("version"),
-                Token::String("bar"),
-                //
-                Token::String("location"),
+                Token::String("dir"),
                 Token::String("foo/bar"),
                 //
                 Token::String("source_id"),

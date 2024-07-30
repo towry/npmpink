@@ -49,7 +49,12 @@ impl Shell {
         self.out.write_stdout(
             &"INFO",
             &msg,
-            Some(Style::new().bold().fg_color(Some(AnsiColor::Green.into()))),
+            Some(
+                Style::new()
+                    .bold()
+                    .bg_color(Some(AnsiColor::Green.into()))
+                    .fg_color(Some(AnsiColor::White.into())),
+            ),
             None,
         )?;
         Ok(())
@@ -58,7 +63,12 @@ impl Shell {
         self.out.write_stdout(
             &"WARN",
             &msg,
-            Some(Style::new().bold().fg_color(Some(AnsiColor::Yellow.into()))),
+            Some(
+                Style::new()
+                    .bold()
+                    .bg_color(Some(AnsiColor::Yellow.into()))
+                    .fg_color(Some(AnsiColor::White.into())),
+            ),
             None,
         )?;
         Ok(())
@@ -78,16 +88,20 @@ impl ShellOut {
         msg: &dyn Display,
         style: Option<Style>,
     ) -> Result<()> {
-        let bold = Style::new().bold().fg_color(Some(AnsiColor::Red.into()));
-        let style = style.unwrap_or_else(Style::new);
+        let bold = Style::new()
+            .bold()
+            .bg_color(Some(AnsiColor::Red.into()))
+            .fg_color(Some(AnsiColor::White.into()));
+        let style = style.unwrap_or_default();
 
         let mut buffer = Vec::new();
 
         // prefix
-        write!(&mut buffer, "{bold}{prefix}:{bold:#}{style} ")?;
+        write!(&mut buffer, "{bold} {prefix} {bold:#} {style}")?;
         // message with format
         write!(&mut buffer, "{msg}{style:#}")?;
 
+        writeln!(&mut buffer)?;
         self.stderr.write_all(&buffer)?;
 
         Ok(())
@@ -106,10 +120,11 @@ impl ShellOut {
 
         write!(
             &mut buffer,
-            "{prefix_style}{prefix}:{prefix_style:#}{style} "
+            "{prefix_style} {prefix} {prefix_style:#} {style}"
         )?;
         write!(&mut buffer, "{msg}{style:#}")?;
 
+        writeln!(&mut buffer)?;
         self.stdout.write_all(&buffer)?;
 
         Ok(())

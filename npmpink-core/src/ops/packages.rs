@@ -34,6 +34,7 @@ pub fn packages_from_source(source: &Source) -> Vec<Package> {
                     pkg.private
                         .as_ref()
                         .is_some_and(package_private_is_not_falsy)
+                        || pkg.private.as_ref().is_none()
                 })
                 .map(|pkg| {
                     Package::new(
