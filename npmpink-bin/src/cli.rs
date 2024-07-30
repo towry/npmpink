@@ -10,6 +10,7 @@ use npmpink_core::{
     config::{appConfig, Config},
     workspace::Workspace,
 };
+use npmpink_tui::shell::shell;
 use std::cell::{RefCell, RefMut};
 use std::path::PathBuf;
 use std::process::Command;
@@ -122,8 +123,9 @@ struct InitArgs {
     force: bool,
 }
 fn cmd_handler_init(args: &InitArgs) -> Result<()> {
-    if !args.force && Config::healthcheck().is_ok() {
-        println!("init passed");
+    if !args.force {
+        let _ = Config::healthcheck()?;
+        shell()?.info("npmpink is already initialized")?;
         return Ok(());
     }
 

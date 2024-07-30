@@ -10,3 +10,5 @@ npmpink-core = { path = "../npmpink-core", version = "0.1.0" }
 crossterm = "0.27.0"
 anyhow = "1.0.86"
 ratatui = "0.27.0"
+lazy_static = "1.5.0"
+anstyle = "1.0.8"

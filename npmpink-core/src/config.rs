@@ -59,7 +59,7 @@ impl Config {
     }
 
     /// Do healthy check for root config
-    pub fn healthcheck() -> Result<(), HealthCheckError> {
+    pub fn healthcheck() -> Result<PathBuf, HealthCheckError> {
         use std::path;
 
         let config_path = Config::root_config_path();
@@ -69,9 +69,7 @@ impl Config {
             return Err(HealthCheckError::ConfigFileNotExist);
         }
 
-        println!("config path: {:?}", config_path);
-
-        Ok(())
+        Ok(config_path.clone())
     }
 
     pub fn create_from_default() -> Result<()> {
