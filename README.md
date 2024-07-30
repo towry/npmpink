@@ -8,6 +8,10 @@
 cargo install --git https://github.com/towry/npmpink
 ```
 
+### Install from release
+
+https://github.com/towry/npmpink/releases/
+
 ## Features
 
 - linked deps manage (high priority).
