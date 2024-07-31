@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Written in [Amber](https://amber-lang.com/)
 # version: 0.3.4-alpha
-# date: 2024-07-31 09:54:36
+# date: 2024-07-31 10:04:32
 function has_failed__25_v0 {
     local command=$1
     eval ${command} > /dev/null 2>&1;
@@ -234,3 +234,6 @@ if [ $__AS != 0 ]; then
         echo $__AF_exit26_v0__144_5 > /dev/null 2>&1
 fi
     echo "Make sure '${bins_folder}' is inside your PATH"
+    echo "To upgrade, run this script again"
+    echo ""
+    echo "run \`npk --help\` to see usage"

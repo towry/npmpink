@@ -143,6 +143,8 @@ main(args) {
     echo "installing seems have failed"
     exit(1)
   }
-  
   echo "Make sure '{bins_folder}' is inside your PATH"
+  echo "To upgrade, run this script again"
+  echo ""
+  echo "run `npk --help` to see usage"
 }
