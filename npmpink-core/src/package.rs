@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 #[derive(PartialEq, Default, Serialize, Deserialize, Debug, Clone, Eq)]
@@ -21,6 +22,13 @@ impl Package {
             dir,
             source_id,
         }
+    }
+}
+
+// TODO: better format this package for different pickers.
+impl fmt::Display for Package {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} - {}", self.dir, self.source_id)
     }
 }
 

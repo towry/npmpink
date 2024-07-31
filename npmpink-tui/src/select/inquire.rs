@@ -8,8 +8,21 @@ use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use std::fmt::Display;
 use std::marker::PhantomData;
 
-struct InquirePicker<T> {
+#[derive(Default)]
+pub struct InquirePickerConfig {}
+
+pub struct InquirePicker<T> {
     _marker: PhantomData<T>,
+    config: InquirePickerConfig,
+}
+
+impl<T> InquirePicker<T> {
+    pub fn new(config: Option<InquirePickerConfig>) -> InquirePicker<T> {
+        InquirePicker {
+            _marker: PhantomData,
+            config: config.unwrap_or_default(),
+        }
+    }
 }
 
 impl<T: Display + Clone> Picker for InquirePicker<T> {

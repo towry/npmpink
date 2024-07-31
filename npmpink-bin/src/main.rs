@@ -1,5 +1,5 @@
 mod cli;
-mod prompts;
+mod config;
 
 use cli::*;
 use npmpink_tui::shell::shell;

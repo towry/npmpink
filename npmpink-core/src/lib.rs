@@ -1,4 +1,5 @@
-pub mod config;
+pub mod item_display;
+pub mod item_formatter;
 pub mod lockfile;
 pub mod ops;
 pub mod package;

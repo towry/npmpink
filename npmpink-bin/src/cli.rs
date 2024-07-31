@@ -1,22 +1,21 @@
 // https://github.com/clap-rs/clap/blob/master/examples/git-derive.rs
 // https://docs.rs/clap/latest/clap/_derive/index.html#terminology
+use crate::config::{appConfig, Config, HealthCheckError};
 use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
-use npmpink_core::config::HealthCheckError;
+use npmpink_core::item_formatter::PackageItemFormatter;
 use npmpink_core::ops::packages::{difference_packages, packages_from_source};
 use npmpink_core::package::Package;
 use npmpink_core::source::Source;
 use npmpink_core::target::Target;
-use npmpink_core::{
-    config::{appConfig, Config},
-    workspace::Workspace,
-};
+use npmpink_core::workspace::Workspace;
+use npmpink_tui::item::PackageItemDisplay;
+use npmpink_tui::select::pick_items;
 use npmpink_tui::shell::shell;
 use std::cell::{RefCell, RefMut};
 use std::path::PathBuf;
 use std::process::Command;
-
-use crate::prompts::select_packages;
+use std::rc::Rc;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
@@ -302,12 +301,32 @@ fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
         lockfile.packages_iter().collect::<Vec<Package>>()
     };
 
-    let picked = select_packages(difference_packages(&pkgs, &lockfile_pkgs).as_slice())?;
+    let get_weak_source = |source_id| {
+        config
+            .sources
+            .iter()
+            .find(|s| s.id == source_id)
+            .map(|p| Rc::from(*p))
+            .unwrap()
+    };
+
+    let picked = pick_items(
+        difference_packages(&pkgs, &lockfile_pkgs)
+            .iter()
+            .map(|p| {
+                let weak_source = get_weak_source(p.source_id);
+                PackageItemDisplay::new(PackageItemFormatter::new(p, Rc::downgrade(&weak_source)))
+            })
+            .collect::<Vec<PackageItemDisplay>>()
+            .as_slice(),
+        Some(Default::default()),
+    )?;
+
     {
         let mut lockfile = target.lockfile_mut()?;
 
         for pkg in picked.iter().cloned() {
-            lockfile.add_package(pkg.name.clone(), pkg);
+            lockfile.add_package(pkg.0.inner.name.clone(), pkg);
         }
     }
     target.flush_lockfile()?;
@@ -324,7 +343,7 @@ fn cmd_handler_package_remove(cli: &Cli) -> Result<()> {
         lockfile.packages_iter().collect::<Vec<Package>>()
     };
 
-    let picked = select_packages(lockfile_pkgs.as_slice())?;
+    let picked = pick_items(lockfile_pkgs.as_slice(), Some(Default::default()))?;
     {
         let mut lockfile = target.lockfile_mut()?;
 
