@@ -12,6 +12,9 @@ install: build-release
 install-debug:
   ln -sf $(pwd)/target/debug/npk /usr/local/bin/npk
 
+build-install-ab:
+  amber ./assets_/install.ab ./assets_/install.sh
+
 source-add-npm-workspaces:
   npk source add ./assets_/fixtures_npm_workspaces
 view-lock:
