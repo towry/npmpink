@@ -1,0 +1,148 @@
+import { has_failed, exit, includes } from "std"
+
+fun get_os(): Text {
+      // Determine OS type
+    let os_type = $uname -s$ failed {
+        echo "Failed to determine OS type (using `uname` command)."
+        echo "Please try again or make sure you have it installed."
+        exit(1)
+    }
+    if os_type == "Darwin":
+        return "apple-darwin"
+    
+    if os_type != "Linux" {
+        echo "Unsupported OS type: {os_type}"
+        echo "Please try again or use another download method."
+        exit(1)
+    }
+    
+    if not has_failed("ls -l /lib | grep libc.musl"):
+        return "unknown-linux-musl"
+
+    return "unknown-linux-gnu"
+}
+
+
+pub fun get_arch(): Text {
+    // Determine architecture
+    let arch_type = $uname -m$ failed {
+        echo "Failed to determine architecture."
+        echo "Please try again or use another download method."
+        exit(1)
+    }
+
+    let arch = includes(["arm64", "aarch64"], arch_type)
+        then "aarch64"
+        else "x86_64"
+
+    return arch
+}
+
+fun get_home(): Text {
+    let home = $echo \$HOME$ failed {
+        echo "User installation requested, but unable to retrieve home directory from $HOME environment."
+        exit(1)
+    }
+    if home == "" {
+        echo "User installation requested, but unable to find home directory."
+        exit(1)
+    }
+    return home
+}
+
+fun get_bins_folder(user_only: Bool): Text {
+    if user_only {
+        return "{get_home()}/.local/bin"
+    } else {
+        // Ensure /usr/local/bin exists for non-user installations
+        let bins_folder = "/usr/local/bin"
+        silent $test -d "{bins_folder}"$ failed {
+            silent $sudo mkdir -p "{bins_folder}"$ failed {
+                echo "Failed to create {bins_folder} directory."
+                exit(1)
+            }
+        }
+        return bins_folder
+    }
+}
+
+fun get_latest_release_tag() {
+    let tag_url = "https://api.github.com/repos/towry/npmpink/releases/latest"
+    let tag_json = $curl -sL "{tag_url}"$?
+    // Get the tag name from the JSON
+    let tag = $echo "\${nameof tag_json}" \
+        | grep -Eo "tag_name\\"[^\\"]*\\"([^\\"]+)\\"" \
+        | grep -Eo "\\"[^\\"]+\\"\$" \
+        | grep -Eo "[^\\"\\s]+"$?
+    return tag
+}
+
+let archive = "npk.tar.gz"
+
+main(args) {
+  let os = get_os()
+  let arch = get_arch()
+
+  let user_only_install = includes(args, "--user")
+  let bins_folder = get_bins_folder(user_only_install)
+
+  // Check if curl is installed
+  if has_failed("curl -V") {
+      echo "Curl is not installed on your system."
+      echo "Please install `curl` and try again."
+      exit(1)
+  }
+
+  echo "Installing npmpink..."
+  if user_only_install {
+      silent $mkdir -p "{bins_folder}"$ failed {
+          echo "Failed to create directory bin at {bins_folder}."
+          exit(1)
+      }
+  }
+
+ let tag = get_latest_release_tag() failed {
+      echo "Failed to get the latest release tag."
+      echo "Please try again or use another download method."
+      exit(1)
+  }
+
+  // Set the download link
+  let url = "https://github.com/towry/npmpink/releases/download/{tag}/npk-{tag}-{arch}-{os}.tar.gz"
+
+  $cd /tmp$?
+
+  // Download 
+  silent $curl --styled-output -# -L -o "{archive}" "{url}"$ failed {
+      echo "Curl failed to download npmpink."
+      echo "Something went wrong. Please try again later."
+      exit(1)
+  }
+
+  // Unarchive
+  silent $tar -xvzf {archive}$ failed {
+      echo "Please make sure that you have `tar` command installed."
+      exit(1)
+  }
+
+  // Give permissions to execute
+  $chmod +x "npk"$ failed {
+      echo "Failed to give permissions to execute npmpink."
+      exit(1)
+  }
+
+  // move to bin
+  $mv ./npk {bins_folder}$ failed {
+    echo "failed to move bin to {bins_folder}"
+    exit(1)
+  }
+
+  echo "Installed to {bins_folder}/npk"
+
+  ${bins_folder}/npk --version$ failed {
+    echo "installing seems have failed"
+    exit(1)
+  }
+  
+  echo "Make sure '{bins_folder}' is inside your PATH"
+}

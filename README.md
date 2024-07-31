@@ -1,17 +1,22 @@
 ![push](https://github.com/towry/npmpink/actions/workflows/ci.yml/badge.svg?event=push) <a href="https://github.com/towry/npmpink/releases/latest"><img src="https://img.shields.io/github/v/release/towry/npmpink?display_name=tag&label=release%3A%20npk" alt="release badge" /></a>
 
-
 # WIP
 
 ## Install
 
-```
-cargo install --git https://github.com/towry/npmpink
-```
-
 ### Install from release
 
 https://github.com/towry/npmpink/releases/
+
+```bash
+curl -s "https://raw.githubusercontent.com/towry/npmpink/main/assets_/install.sh" | bash
+```
+
+### Install from source with cargo
+
+```
+cargo install --git https://github.com/towry/npmpink
+```
 
 ## Features
 
