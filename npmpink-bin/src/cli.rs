@@ -333,7 +333,9 @@ fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
     Ok(())
 }
 
+// TODO: package and source existence check
 fn cmd_handler_package_remove(cli: &Cli) -> Result<()> {
+    let config = appConfig.lock().unwrap();
     let target = cli.target();
 
     let lockfile_pkgs = {
@@ -341,12 +343,26 @@ fn cmd_handler_package_remove(cli: &Cli) -> Result<()> {
         lockfile.packages_iter().collect::<Vec<Package>>()
     };
 
-    let picked = pick_items(lockfile_pkgs.as_slice(), Some(Default::default()))?;
+    let get_weak_source =
+        |source_id: &String| config.sources.iter().find(|s| &s.id == source_id).unwrap();
+
+    let pkgs_to_pick = lockfile_pkgs
+        .into_iter()
+        .map(Rc::new)
+        .map(|p| {
+            PackageItemDisplay::new(PackageItemFormatter::new(
+                Rc::clone(&p),
+                get_weak_source(&p.source_id),
+            ))
+        })
+        .collect::<Vec<PackageItemDisplay>>();
+
+    let picked = pick_items(pkgs_to_pick.as_slice(), Some(Default::default()))?;
     {
         let mut lockfile = target.lockfile_mut()?;
 
         for pkg in picked.iter().cloned() {
-            lockfile.remove_package(pkg.name.clone());
+            lockfile.remove_package(pkg.raw.inner.name.clone());
         }
     }
     target.flush_lockfile()?;
