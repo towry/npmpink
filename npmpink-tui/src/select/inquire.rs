@@ -1,26 +1,60 @@
+use super::Picker;
+use crate::color::Color;
 use anyhow::Result;
 use inquire::ui::{
     Attributes, Color as UiColor, ErrorMessageRenderConfig, RenderConfig, StyleSheet, Styled,
 };
 use inquire::{formatter::MultiOptionFormatter, MultiSelect};
-use npmpink_core::package::Package;
-use npmpink_tui::color::Color;
+use std::fmt::Display;
+use std::marker::PhantomData;
 
-pub fn select_packages<'b, 'a: 'b>(pkgs: &'b [Package]) -> Result<Vec<Package>> {
-    let formatter: MultiOptionFormatter<'_, String> = &|a| format!("{} selected", a.len());
-    let opts: Vec<String> = pkgs.iter().map(|p| p.dir.clone()).collect();
-    let theme = create_theme();
+#[derive(Default)]
+pub struct InquirePickerConfig {}
 
-    let ans = MultiSelect::new("Select packages:", opts)
-        .with_render_config(theme)
-        .with_formatter(formatter)
-        .raw_prompt()?;
+pub struct InquirePicker<T> {
+    _marker: PhantomData<T>,
+    config: InquirePickerConfig,
+}
 
-    Ok(ans
-        .iter()
-        .filter_map(|n| pkgs.get(n.index))
-        .cloned()
-        .collect::<Vec<Package>>())
+impl<T> InquirePicker<T> {
+    pub fn new(config: Option<InquirePickerConfig>) -> InquirePicker<T> {
+        InquirePicker {
+            _marker: PhantomData,
+            config: config.unwrap_or_default(),
+        }
+    }
+}
+
+impl<T: Display + Clone> Picker for InquirePicker<T> {
+    type Item = T;
+
+    fn select(&self, items: &[Self::Item]) -> Result<Vec<Self::Item>> {
+        let formatter: MultiOptionFormatter<'_, String> = &|a| format!("{} selected", a.len());
+        let opts: Vec<String> = items
+            .iter()
+            .map(|p| {
+                self.format_item(p)
+                    .map(|p| p.to_string())
+                    .unwrap_or("".to_string())
+            })
+            .collect();
+        let theme = create_theme();
+
+        let ans = MultiSelect::new("Select packages:", opts)
+            .with_render_config(theme)
+            .with_formatter(formatter)
+            .raw_prompt()?;
+
+        Ok(ans
+            .into_iter()
+            .filter_map(|n| items.get(n.index))
+            .cloned()
+            .collect::<Vec<T>>())
+    }
+
+    fn format_item(&self, item: &Self::Item) -> Option<Box<dyn Display>> {
+        Some(Box::new(item.to_string()))
+    }
 }
 
 fn rgb(color: Color) -> UiColor {

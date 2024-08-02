@@ -9,7 +9,7 @@
     naersk.inputs.nixpkgs.follows = "nixpkgs";
   };
   outputs = {
-    self,
+    # self,
     nixpkgs,
     fenix,
     naersk,
@@ -44,6 +44,7 @@
           stable.cargo
           stable.rustc
           stable.rustfmt
+          stable.rust-src
           stable.clippy
           targets.${rustTarget}.stable.rust-std
           # targets.wasm32-wasi.stable.rust-std
@@ -66,6 +67,7 @@
       devShells.default = pkgs.mkShell {
         buildInputs = buildInputs;
         nativeBuildInputs = [pkgs.rust-analyzer-nightly rust-toolchain pkgs.pkg-config];
+        RUST_SRC_PATH = "${rust-toolchain}/lib/rustlib/src/rust/library";
       };
     });
 }
