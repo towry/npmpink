@@ -60,6 +60,7 @@ npk sync
 - [x] Better package discovery.
 - [x] Error message handle.
 - [x] Pretty console output.
+- [ ] clear terminal after user abort action.
 
 - https://excalidraw.com/#json=7oqX_amJ0GwZaldcHYkHp,hKmYmGQI-AHS2k2AMQFReA
 - https://docs.rs/tui/0.19.0/tui/

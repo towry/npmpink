@@ -301,21 +301,18 @@ fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
         lockfile.packages_iter().collect::<Vec<Package>>()
     };
 
-    let get_weak_source = |source_id| {
-        config
-            .sources
-            .iter()
-            .find(|s| s.id == source_id)
-            .map(|p| Rc::from(*p))
-            .unwrap()
-    };
+    let get_weak_source =
+        |source_id: &String| config.sources.iter().find(|s| &s.id == source_id).unwrap();
+
+    let pkgs_to_pick = difference_packages(&pkgs, &lockfile_pkgs)
+        .into_iter()
+        .map(Rc::new);
 
     let picked = pick_items(
-        difference_packages(&pkgs, &lockfile_pkgs)
-            .iter()
+        pkgs_to_pick
             .map(|p| {
-                let weak_source = get_weak_source(p.source_id);
-                PackageItemDisplay::new(PackageItemFormatter::new(p, Rc::downgrade(&weak_source)))
+                let weak_source = get_weak_source(&p.source_id);
+                PackageItemDisplay::new(PackageItemFormatter::new(Rc::clone(&p), weak_source))
             })
             .collect::<Vec<PackageItemDisplay>>()
             .as_slice(),
@@ -326,7 +323,8 @@ fn cmd_handler_package_add(cli: &Cli) -> Result<()> {
         let mut lockfile = target.lockfile_mut()?;
 
         for pkg in picked.iter().cloned() {
-            lockfile.add_package(pkg.0.inner.name.clone(), pkg);
+            let raw = pkg.raw;
+            lockfile.add_package(raw.inner.name.clone(), Rc::unwrap_or_clone(raw.inner));
         }
     }
     target.flush_lockfile()?;
